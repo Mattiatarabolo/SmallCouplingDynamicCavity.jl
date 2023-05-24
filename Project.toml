@@ -1,0 +1,13 @@
+name = "SmallCouplingDynamicCavity"
+uuid = "1607259e-80f4-4675-b495-cb9c54bacb3f"
+authors = ["Mattia tarabolo <mattia.tarabolo@gmail.com>"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
