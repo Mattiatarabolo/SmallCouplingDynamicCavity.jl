@@ -116,7 +116,7 @@ function sim_epidemics(
         end
     elseif patient_zero === nothing && γ != nothing
         while !inf₀
-            patient_zero = rand(Binomial(1,\/nv(G)), nv(G))
+            patient_zero = rand(Binomial(1,1/nv(G)), nv(G))
             patient_zero = findall(x->x==1, patient_zero)
             inf₀ = !isempty(patient_zero)
         end
