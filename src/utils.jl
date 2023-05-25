@@ -107,12 +107,19 @@ function sim_epidemics(
     patient_zero::Union{Vector{Int},Nothing}=nothing,
     γ::Union{Float64,Nothing}=nothing)
 
+    inf₀ = false
     if patient_zero === nothing && γ != nothing
-        patient_zero = rand(Binomial(1,γ), nv(G))
-        patient_zero = findall(x->x==1, patient_zero)
+        while !inf₀
+            patient_zero = rand(Binomial(1,γ), nv(G))
+            patient_zero = findall(x->x==1, patient_zero)
+            inf₀ = !isempty(patient_zero)
+        end
     elseif patient_zero === nothing && γ != nothing
-        patient_zero = rand(Binomial(1,1/nv(G)), nv(G))
-        patient_zero = findall(x->x==1, patient_zero)
+        while !inf₀
+            patient_zero = rand(Binomial(1,\/nv(G)), nv(G))
+            patient_zero = findall(x->x==1, patient_zero)
+            inf₀ = !isempty(patient_zero)
+        end
     end
 
     config = zeros(nv(G), T + 1)
