@@ -34,7 +34,7 @@ function update_single_message!(
     newmess.μ .= jnode.cavities[iindex].μ.*damp .+ newmess.μ.*(1 - damp)
 
     ε = max(normupdate(jnode.cavities[iindex].m, newmess.m), normupdate(jnode.cavities[iindex].μ, newmess.μ))
-
+#= 
     if isnan(ε)
         #DEBUGGING       
         println("cavity updated i = $(inode.i)-> j = $(jnode.i)")
@@ -67,6 +67,7 @@ function update_single_message!(
         throw(DomainError("NaN evaluated"))
     end
 
+ =#    
     jnode.cavities[iindex].m .= newmess.m
     jnode.cavities[iindex].μ .= newmess.μ 
 
@@ -83,40 +84,14 @@ function compute_ρ!(
     ρ::FBm,
     prior::Array{Float64,2},
     T::Int,
-    ε_autoinf::Float64,
-    model::Symbol)
+    infectionmodel::TI) where {TI <:InfectionModel}
 
     clear!(M, ρ)
 
     ρ.fwm[:, 1] .= ρ_norm(prior[:, inode.i])
     ρ.bwm[:, T+1] .= ρ_norm(inode.obs[:, T+1])
 
-    if model == :SI
-        # problema numerico di exp e 1-exp
-        M[1, 1, :] .= (exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1])).*(1 - ε_autoinf) .* inode.obs[1, 1:end-1]
-        M[1, 2, :] .= (ones(T).- exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1]).*(1 - ε_autoinf)) .* inode.obs[1, 1:end-1]
-        M[2, 2, :] .= exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex][1:end-1]) .* inode.obs[2, 1:end-1]
-    elseif model == :SIS
-        M[1, 1, :] .= (exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1])).*(1 - ε_autoinf) .* inode.obs[1, 1:end-1]
-        M[1, 2, :] .= (ones(T).- exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1]).*(1 - ε_autoinf)) .* inode.obs[1, 1:end-1]
-        M[2, 1, :] .= inode.rᵢᵗ[1:end-1] .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex][1:end-1]) .* inode.obs[2, 1:end-1]
-        M[2, 2, :] .= (ones(T) .- inode.rᵢᵗ[1:end-1]) .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex][1:end-1]) .* inode.obs[2, 1:end-1]
-    elseif model == :SIR
-        M[1, 1, :] .= (exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1])).*(1 - ε_autoinf) .* inode.obs[1, 1:end-1]
-        M[1, 2, :] .= (ones(T).- exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1]).*(1 - ε_autoinf)) .* inode.obs[1, 1:end-1]
-        M[2, 2, :] .= (ones(T) .- inode.rᵢᵗ[1:end-1]) .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex][1:end-1]) .* inode.obs[2, 1:end-1]
-        M[2, 3, :] .= inode.rᵢᵗ[1:end-1] .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex][1:end-1]) .* inode.obs[2, 1:end-1]
-        M[3, 3, :] .= inode.obs[3, 1:end-1]
-    elseif model == :SIRS
-        M[1, 1, :] .= (exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1])).*(1 - ε_autoinf) .* inode.obs[1, 1:end-1]
-        M[1, 2, :] .= (ones(T).- exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1]).*(1 - ε_autoinf)) .* inode.obs[1, 1:end-1]
-        M[2, 2, :] .= (ones(T) .- inode.rᵢᵗ[1:end-1]) .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex][1:end-1]) .* inode.obs[2, 1:end-1]
-        M[2, 3, :] .= inode.rᵢᵗ[1:end-1] .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex][1:end-1]) .* inode.obs[2, 1:end-1]
-        M[3, 1, :] .= inode.σᵢᵗ[1:end-1] .* inode.obs[3, 1:end-1]
-        M[3, 3, :] .= (ones(T) .- inode.σᵢᵗ[1:end-1]) .* inode.obs[3, 1:end-1]
-    else
-        throw(ArgumentError("The only available models are SI, SIS, and SIR"))
-    end
+    fill_transmat_cav!(M, inode, iindex, jnode, jindex, sumargexp, infectionmodel)
 
     # fwd-bwd update
     for t in 1:T
@@ -138,8 +113,7 @@ function update_single_marginal!(
     updmess::Updmess,
     newmarg::Marginal,
     μ_cutoff::Float64,
-    ε_autoinf::Float64,
-    model::Symbol)
+    infectionmodel::TI) where {TI <:InfectionModel}
     
     compute_sumargexp!(inode, nodes, sumargexp)
 
@@ -148,32 +122,7 @@ function update_single_marginal!(
     ρ.fwm[:, 1] .= ρ_norm(prior[:, inode.i])
     ρ.bwm[:, T+1] .= ρ_norm(inode.obs[:, T+1])
 
-    if model == :SI
-        # problema numerico di exp e 1-exp
-        M[1, 1, :] .= exp.(sumargexp.summ[1:end-1]) .* (1- ε_autoinf).* inode.obs[1, 1:end-1]
-        M[1, 2, :] .= (ones(T).- exp.(sumargexp.summ[1:end-1]).* (1- ε_autoinf)) .* inode.obs[1, 1:end-1]
-        M[2, 2, :] .= exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
-    elseif model == :SIS
-        M[1, 1, :] .= exp.(sumargexp.summ[1:end-1]) .* (1- ε_autoinf).* inode.obs[1, 1:end-1]
-        M[1, 2, :] .= (ones(T).- exp.(sumargexp.summ[1:end-1]).* (1- ε_autoinf)) .* inode.obs[1, 1:end-1]
-        M[2, 1, :] .= inode.rᵢᵗ[1:end-1] .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
-        M[2, 2, :] .= (ones(T) .- inode.rᵢᵗ[1:end-1]) .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
-    elseif model == :SIR
-        M[1, 1, :] .= exp.(sumargexp.summ[1:end-1]) .* (1- ε_autoinf).* inode.obs[1, 1:end-1]
-        M[1, 2, :] .= (ones(T).- exp.(sumargexp.summ[1:end-1]).* (1- ε_autoinf)) .* inode.obs[1, 1:end-1]
-        M[2, 2, :] .= (ones(T) .- inode.rᵢᵗ[1:end-1]) .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
-        M[2, 3, :] .= inode.rᵢᵗ[1:end-1] .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
-        M[3, 3, :] .= inode.obs[3, 1:end-1]
-    elseif model == :SIRS
-        M[1, 1, :] .= exp.(sumargexp.summ[1:end-1]) .* (1- ε_autoinf).* inode.obs[1, 1:end-1]
-        M[1, 2, :] .= (ones(T).- exp.(sumargexp.summ[1:end-1]).* (1- ε_autoinf)) .* inode.obs[1, 1:end-1]
-        M[2, 2, :] .= (ones(T) .- inode.rᵢᵗ[1:end-1]) .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
-        M[2, 3, :] .= inode.rᵢᵗ[1:end-1] .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
-        M[3, 1, :] .= inode.σᵢᵗ[1:end-1] .* inode.obs[3, 1:end-1]
-        M[3, 3, :] .= (ones(T) .- inode.σᵢᵗ[1:end-1]) .* inode.obs[3, 1:end-1]
-    else
-        throw(ArgumentError("The only available models are SI, SIS, and SIR"))
-    end
+    fill_transmat_marg!(M, inode, sumargexp, infectionmodel)
 
     # fwd-bwd update
     for t in 1:T
@@ -223,8 +172,7 @@ function update_node!(
     newmarg::Marginal,
     damp::Float64,
     μ_cutoff::Float64,
-    ε_autoinf::Float64,
-    model::Symbol)
+    infectionmodel::TI) where {TI <:InfectionModel}
 
     ε = 0.0
 
@@ -232,7 +180,7 @@ function update_node!(
 
     for (jindex, j) in enumerate(inode.∂)
         iindex = nodes[j].∂_idx[inode.i]
-        M, ρ = compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, T, ε_autoinf, model)
+        M, ρ = compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, T, infectionmodel)
         ε = max(ε, update_single_message!(nodes[j], iindex, ρ, M, updmess, newmess, damp, sumargexp, inode, μ_cutoff))
     end
 
@@ -251,13 +199,12 @@ function update_cavities!(
     newmarg::Marginal,
     damp::Float64,
     μ_cutoff::Float64,
-    ε_autoinf::Float64,
-    model::Symbol)
+    infectionmodel::TI) where {TI <:InfectionModel}
 
     ε = 0.0
 
     for inode in nodes
-        ε = max(ε, update_node!(inode, nodes, sumargexp, M, ρ, prior, T, updmess, newmess, newmarg, damp, μ_cutoff, ε_autoinf, model))
+        ε = max(ε, update_node!(inode, nodes, sumargexp, M, ρ, prior, T, updmess, newmess, newmarg, damp, μ_cutoff, infectionmodel))
     end
 
     return ε
@@ -273,17 +220,10 @@ function compute_marginals!(
     updmess::Updmess,
     newmarg::Marginal,
     μ_cutoff::Float64,
-    ε_autoinf::Float64,
-    model::Symbol)
-
-    if model == :SI || model == :SIS
-        nr_states = 2
-    elseif model == :SIR || model == :SIRS
-        nr_states = 3
-    end
+    infectionmodel::TI) where {TI <:InfectionModel}
 
     for inode in nodes
-        newmarg = update_single_marginal!(inode, nodes, sumargexp, M, ρ, prior, T, updmess, newmarg, μ_cutoff, ε_autoinf, model)
+        newmarg = update_single_marginal!(inode, nodes, sumargexp, M, ρ, prior, T, updmess, newmarg, μ_cutoff, infectionmodel)
         inode.marg.m .= newmarg.m
     end
 
@@ -292,67 +232,34 @@ end
 
 
 function run_SCDC(
-    G::SimpleGraph{Int64},
-    λ::Array{Float64,3},
-    obsmat::Array{Float64,2},
+    model::EpidemicModel{TI},
     obsprob::Function,
     γ::Float64,
-    T::Int64,
     maxiter::Int64,
     epsconv::Float64,
     damp::Float64,
-    model::Symbol;
-    r::Union{Array{Float64,2},Nothing}=nothing,
-    σ::Union{Array{Float64,2},Nothing}=nothing,
     μ_cutoff::Float64 = -Inf,
-    ε_autoinf::Float64 = 0.0,
-    callback::Function=(x...) -> nothing)
-
-    if model == :SI || model == :SIS
-        nr_states = 2
-    elseif model == :SIR || model == :SIRS
-        nr_states = 3
-    else
-        throw(ArgumentError("The only available models are SI, SIS, and SIR"))
-    end
+    callback::Function=(x...) -> nothing) where {TI <: InfectionModel}
 
     # set prior (given an expected mean number of source patients γ)
-    prior = zeros(nr_states, nv(G))
+    prior = zeros(n_states(model.Disease), nv(model.G))
     prior[1, :] .= (1 - γ) # x_i = S
     prior[2, :] .= γ # x_i = I
 
-    # compute ν Matrix
-    ν = log.(1 .- λ)
+    nodes = nodes_formatting(model, obsprob)
 
-    if model == :SI
-            nodes = nodes_formatting(G, obsmat, obsprob, ν, T, nr_states)
-    elseif model == :SIS || model == :SIR
-        if r === nothing
-            throw(ArgumentError("r must be non empty for SIS and SIR"))
-        end
-            nodes = nodes_formatting(G, obsmat, obsprob, ν, T, nr_states, r=r)
-
-    elseif model == :SIRS
-        if σ === nothing
-            throw(ArgumentError("σ must be non empty for SIS and SIR"))
-        end
-            nodes = nodes_formatting(G, obsmat, obsprob, ν, T, nr_states, r=r, σ=σ)
-    else
-        throw(ArgumentError("The only available models are SI, SIS, SIR and SIRS"))
-    end
-
-    Mⁱʲ = TransMat(T, nr_states)
-    ρⁱʲ = FBm(T, nr_states)
-    sumargexp = SumM(T)
-    updmess = Updmess(T, nr_states)
-    newmess = Message(0, 0, T)
-    newmarg = Marginal(0, T, nr_states)
+    Mⁱʲ = TransMat(model.T, model.Disease)
+    ρⁱʲ = FBm(model.T, model.Disease)
+    sumargexp = SumM(model.T)
+    updmess = Updmess(model.T, model.Disease)
+    newmess = Message(0, 0, model.T)
+    newmarg = Marginal(0, model.T, model.Disease)
 
     ε = 0.0
 
     for iter = 1:maxiter
         #update cavity messages and compute their convergence
-        ε = update_cavities!(nodes, sumargexp, Mⁱʲ, ρⁱʲ, prior, T, updmess, newmess, newmarg, damp, μ_cutoff, ε_autoinf, model)
+        ε = update_cavities!(nodes, sumargexp, Mⁱʲ, ρⁱʲ, prior, model.T, updmess, newmess, newmarg, damp, μ_cutoff, model.Disease)
 
         callback(nodes, iter, ε)
 
@@ -367,7 +274,7 @@ function run_SCDC(
         sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
         for (jindex, j) in enumerate(inode.∂)
             iindex = nodes[j].∂_idx[inode.i]
-            _, ρ = compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, Mⁱʲ, ρⁱʲ, prior, T, ε_autoinf, model)
+            _, ρ = compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, Mⁱʲ, ρⁱʲ, prior, model.T, model.Disease)
             nodes[j].ρs[iindex].fwm .= ρ.fwm
             nodes[j].ρs[iindex].bwm .= ρ.bwm
         end
@@ -379,7 +286,7 @@ function run_SCDC(
     end
     
 
-    compute_marginals!(nodes, sumargexp, Mⁱʲ, ρⁱʲ, T, prior, updmess, newmarg, μ_cutoff, ε_autoinf, model)
+    compute_marginals!(nodes, sumargexp, Mⁱʲ, ρⁱʲ, model.T, prior, updmess, newmarg, μ_cutoff, model.Disease)
 
     return nodes
 end

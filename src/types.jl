@@ -1,8 +1,8 @@
 function TransMat(
     T::Int, 
-    nr_states::Int)
+    infectionmodel::TI) where {TI <:InfectionModel}
 
-    return zeros(nr_states, nr_states, T)
+    return zeros(n_states(infectionmodel), n_states(infectionmodel), T)
 end
 
 struct FBm
@@ -12,12 +12,12 @@ end
 
 function FBm(
     T::Int, 
-    nr_states::Int)
+    infectionmodel::TI) where {TI <:InfectionModel}
 
-    return FBm(ones(nr_states, T + 1), ones(nr_states, T + 1))
+    return FBm(ones(n_states(infectionmodel), T + 1), ones(n_states(infectionmodel), T + 1))
 end
 
-mutable struct SumM
+struct SumM
     summ::Vector{Float64}
     sumμ::Vector{Float64}
 end
@@ -26,7 +26,7 @@ function SumM(T::Int)
     return SumM(zeros(T + 1), zeros(T))
 end
 
-mutable struct Updmess
+struct Updmess
     lognumm::Array{Float64,2}
     lognumμ::Vector{Float64}
     signμ::Vector{Float64}
@@ -35,12 +35,12 @@ end
 
 function Updmess(
     T::Int, 
-    nr_states::Int)
+    infectionmodel::TI) where {TI <:InfectionModel}
     
-    return Updmess(zeros(nr_states, T + 1), zeros(T), ones(T), zeros(T + 1))
+    return Updmess(zeros(n_states(infectionmodel), T + 1), zeros(T), ones(T), zeros(T + 1))
 end
 
-mutable struct Message
+struct Message
     i::Int
     j::Int
     m::Vector{Float64} #message m_i\j
@@ -54,7 +54,7 @@ function Message(
     return Message(i, j, ones(T + 1) ./ (T + 1), zeros(T))
 end
 
-mutable struct Marginal
+struct Marginal
     i::Int
     m::Array{Float64, 2} #marginal p_i(x_i^t)
     μ::Vector{Float64} #marginal μ_i^t
@@ -63,10 +63,11 @@ end
 function Marginal(
     i::Int,
     T::Int,
-    nr_states::Int)
-    return Marginal(i, ones(nr_states, T + 1) ./ (T + 1), zeros(T))
+    infectionmodel::TI) where {TI <:InfectionModel}
+    return Marginal(i, ones(n_states(infectionmodel), T + 1) ./ (T + 1), zeros(T))
 end
-mutable struct Node
+
+struct Node{T <: InfectionModel}
     i::Int
     ∂::Vector{Int}
     ∂_idx::Dict{Int,Int}
@@ -74,9 +75,8 @@ mutable struct Node
     cavities::Vector{Message}
     ρs::Vector{FBm}
     νs::Vector{Vector{Float64}}
-    rᵢᵗ::Union{Vector{Float64},Nothing}
-    σᵢᵗ::Union{Vector{Float64},Nothing}
     obs::Array{Float64,2}
+    infectionmodel::T
 end
 
 function Node(
@@ -85,9 +85,7 @@ function Node(
     T::Int, 
     νs::Vector{Vector{Float64}}, 
     obs::Array{Float64,2},
-    nr_states::Int; 
-    rᵢᵗ::Union{Vector{Float64},Nothing}=nothing, 
-    σᵢᵗ::Union{Vector{Float64},Nothing}=nothing)
+    infectionmodel::TI) where {TI <:InfectionModel}
 
     return Node(
         i,
@@ -97,7 +95,23 @@ function Node(
         collect([Message(i, j, T) for j in ∂]),
         collect([FBm(T, nr_states) for _ in 1:length(∂)]),
         νs,
-        rᵢᵗ,
-        σᵢᵗ,
-        obs)
+        obs,
+        infectionmodel)
+end
+
+
+struct EpidemicModel{TI<:InfectionModel}
+    Disease::TI
+    G::SimpleGraph{Int64}
+    T::Int
+    ν::Array{Float64, 3}
+    obsmat::Matrix{Float64}
+end
+
+function EpidemicModel(infectionmodel::TI, G::SimpleGraph{Int64}, T::Int, ν::Array{Float64, 3}, obs::Matrix{Float64}) where {TI <: InfectionModel}
+    return EpidemicModel{TI}(infectionmodel, G, T, ν, obs)
+end
+
+function EpidemicModel(infectionmodel::TI, G::SimpleGraph{Int64}, T::Int, ν::Array{Float64, 3}) where {TI <: InfectionModel}
+    return EpidemicModel{TI}(infectionmodel, G, T, ν, zeros(nv(G),T+1))
 end
