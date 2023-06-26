@@ -76,13 +76,13 @@ function sim_epidemics(
     γ::Union{Float64,Nothing}=nothing)
 
     inf₀ = false
-    if patient_zero === nothing && γ != nothing
+    if patient_zero === nothing && γ !== nothing
         while !inf₀
             patient_zero = rand(Binomial(1,γ), nv(model.G))
             patient_zero = findall(x->x==1, patient_zero)
             inf₀ = !isempty(patient_zero)
         end
-    elseif patient_zero === nothing && γ != nothing
+    elseif patient_zero === nothing && γ !== nothing
         while !inf₀
             patient_zero = rand(Binomial(1,1/nv(model.G)), nv(model.G))
             patient_zero = findall(x->x==1, patient_zero)
