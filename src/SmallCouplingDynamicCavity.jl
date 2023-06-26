@@ -2,10 +2,20 @@ module SmallCouplingDynamicCavity
 
 using Graphs, Distributions
 
-export sim_epidemics, run_SCDC, run_SCDC_MF, ROC_curve, bethe_lattice
+export sim_epidemics, run_SCDC, ROC_curve, bethe_lattice, SI, SIR, SIS, SIRS, EpidemicModel
+
+abstract type InfectionModel
+    # the infection probability is included into the temporal graph
+end
 
 include("types.jl")
 include("utils.jl")
+
+include("models/SI.jl")
+include("models/SIR.jl")
+include("models/SIS.jl")
+include("models/SIRS.jl")
+
 include("message_passing_func.jl")
 
 end
