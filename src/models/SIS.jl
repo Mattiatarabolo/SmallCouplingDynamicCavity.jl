@@ -1,27 +1,28 @@
 struct SIS <: InfectionModel
-    εᵢᵗ::Union{Float64,Array{Float64,2}} # autoinfection
-    σᵢᵗ::Union{Float64,Array{Float64,2}} # R->S
+    εᵢᵗ::Array{Float64,2} # autoinfection
+    rᵢᵗ::Array{Float64,2} # I->R
 end
 n_states(X::SIS) = 2
 
 # formatting
 function SIS(
     εᵢᵗ::Union{Float64,Array{Float64,2}},
-    σᵢᵗ::Union{Float64,Array{Float64,2}},
+    rᵢᵗ::Union{Float64,Array{Float64,2}},
+    NV::Int,
     T::Int)
-    if length(εᵢᵗ) == T+1
-        εᵢᵗ = εᵢᵗ[1:end-1]
-    elseif length(σᵢᵗ) == T+1 
-        σᵢᵗ = σᵢᵗ[1:end-1]
+    if typeof(εᵢᵗ) == Float64
+        εᵢᵗ = ones(NV, T) .* εᵢᵗ
+    end
+    if typeof(rᵢᵗ) == Float64
+        rᵢᵗ = ones(NV, T) .* rᵢᵗ
     end
 
-    return SIRS(εᵢᵗ, rᵢᵗ, σᵢᵗ)
+    return SIS(εᵢᵗ, rᵢᵗ)
 end
 
 function nodes_formatting(
     model::EpidemicModel{SIS}, 
-    obsprob::Function, 
-    ν::Array{Float64,3})
+    obsprob::Function)
 
     nodes = Vector{Node{SIS}}()
 
@@ -32,7 +33,7 @@ function nodes_formatting(
 
         ∂ = neighbors(model.G, i)
 
-        ν∂ = [ν[k, i, :] for k in ∂]
+        ν∂ = [model.ν[k, i, :] for k in ∂]
 
         push!(nodes, Node(i, ∂, model.T, ν∂, obs, model.Disease))
         
@@ -43,29 +44,29 @@ end
 # function to fill the transfer matrix
 function fill_transmat_cav!(
     M::Array{Float64,3},
-    inode::Node,
+    inode::Node{SIS},
     iindex::Int,
-    jnode::Node,
+    jnode::Node{SIS},
     jindex::Int,
     sumargexp::SumM,
-    infectionmodel::SI)
+    infectionmodel::SIS)
     
-    M[1, 1, :] .= (exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1])).*(1 .- infectionmodel.εᵢᵗ) .* inode.obs[1, 1:end-1]
-    M[1, 2, :] .= (1 .- exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1]).*(1 .- infectionmodel.εᵢᵗ)) .* inode.obs[1, 1:end-1]
-    M[2, 1, :] .= infectionmodel.rᵢᵗ .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex][1:end-1]) .* inode.obs[2, 1:end-1]
-    M[2, 2, :] .= (1 .- infectionmodel.rᵢᵗ) .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex][1:end-1]) .* inode.obs[2, 1:end-1]
+    M[1, 1, :] .= (exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1])).*(1 .- infectionmodel.εᵢᵗ[inode.i, :]) .* inode.obs[1, 1:end-1]
+    M[1, 2, :] .= (1 .- exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1]).*(1 .- infectionmodel.εᵢᵗ[inode.i, :])) .* inode.obs[1, 1:end-1]
+    M[2, 1, :] .= infectionmodel.rᵢᵗ[inode.i, :] .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex][1:end-1]) .* inode.obs[2, 1:end-1]
+    M[2, 2, :] .= (1 .- infectionmodel.rᵢᵗ[inode.i, :]) .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex][1:end-1]) .* inode.obs[2, 1:end-1]
 end
 
 function fill_transmat_marg!(
     M::Array{Float64,3},
-    inode::Node,
+    inode::Node{SIS},
     sumargexp::SumM,
-    infectionmodel::SI)
+    infectionmodel::SIS)
     
-    M[1, 1, :] .= (exp.(sumargexp.summ[1:end-1])).*(1 .- infectionmodel.εᵢᵗ) .* inode.obs[1, 1:end-1]
-    M[1, 2, :] .= (1 .- exp.(sumargexp.summ[1:end-1]).*(1 .- infectionmodel.εᵢᵗ)) .* inode.obs[1, 1:end-1]
-    M[2, 1, :] .= infectionmodel.rᵢᵗ .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
-    M[2, 2, :] .= (1 .- infectionmodel.rᵢᵗ) .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
+    M[1, 1, :] .= (exp.(sumargexp.summ[1:end-1])).*(1 .- infectionmodel.εᵢᵗ[inode.i, :]) .* inode.obs[1, 1:end-1]
+    M[1, 2, :] .= (1 .- exp.(sumargexp.summ[1:end-1]).*(1 .- infectionmodel.εᵢᵗ[inode.i, :])) .* inode.obs[1, 1:end-1]
+    M[2, 1, :] .= infectionmodel.rᵢᵗ[inode.i, :] .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
+    M[2, 2, :] .= (1 .- infectionmodel.rᵢᵗ[inode.i, :]) .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
 end
 
 # sample
@@ -95,8 +96,8 @@ function sim_epidemics(
 
     hs = zeros(nv(model.G))
     for t in 1:model.T
-        hs = config[:, t]' * model.ν[:, :, t]
-        config[:, t+1] = [x * rand(Bernoulli(1 - r)) + (1 - x) * rand(Bernoulli(1 - exp(h))) for (x, h, r) in zip(config[:, t], hs, model.Disease.σᵢᵗ[:, t])]
+        hs .= (config[:, t]' * model.ν[:, :, t])'
+        config[:, t+1] .= [x * rand(Bernoulli(1 - r)) + (1 - x) * rand(Bernoulli(1 - exp(h))) for (x, h, r) in zip(config[:, t], hs, model.Disease.rᵢᵗ[:, t])]
     end
     return config
 end

@@ -67,7 +67,7 @@ function Marginal(
     return Marginal(i, ones(n_states(infectionmodel), T + 1) ./ (T + 1), zeros(T))
 end
 
-struct Node{T <: InfectionModel}
+struct Node{TI <: InfectionModel}
     i::Int
     ∂::Vector{Int}
     ∂_idx::Dict{Int,Int}
@@ -76,7 +76,7 @@ struct Node{T <: InfectionModel}
     ρs::Vector{FBm}
     νs::Vector{Vector{Float64}}
     obs::Array{Float64,2}
-    infectionmodel::T
+    infectionmodel::TI
 end
 
 function Node(
@@ -87,13 +87,13 @@ function Node(
     obs::Array{Float64,2},
     infectionmodel::TI) where {TI <:InfectionModel}
 
-    return Node(
+    return Node{TI}(
         i,
         ∂,
         Dict(∂[idx] => idx for idx = 1:length(∂)),
-        Marginal(i, T, nr_states),
+        Marginal(i, T, infectionmodel),
         collect([Message(i, j, T) for j in ∂]),
-        collect([FBm(T, nr_states) for _ in 1:length(∂)]),
+        collect([FBm(T, infectionmodel) for _ in 1:length(∂)]),
         νs,
         obs,
         infectionmodel)

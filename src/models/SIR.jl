@@ -1,6 +1,6 @@
 struct SIR <: InfectionModel
-    εᵢᵗ::Union{Float64,Array{Float64,2}} # autoinfection
-    rᵢᵗ::Union{Float64,Array{Float64,2}} # I->R
+    εᵢᵗ::Array{Float64,2} # autoinfection
+    rᵢᵗ::Array{Float64,2} # I->R
 end
 n_states(X::SIR) = 3
 
@@ -8,11 +8,13 @@ n_states(X::SIR) = 3
 function SIR(
     εᵢᵗ::Union{Float64,Array{Float64,2}},
     rᵢᵗ::Union{Float64,Array{Float64,2}},
+    NV::Int,
     T::Int)
-    if length(εᵢᵗ) == T+1
-        εᵢᵗ = εᵢᵗ[1:end-1]
-    elseif length(rᵢᵗ) == T+1
-        rᵢᵗ = rᵢᵗ[1:end-1]
+    if typeof(εᵢᵗ) == Float64
+        εᵢᵗ = ones(NV, T) .* εᵢᵗ
+    end
+    if typeof(rᵢᵗ) == Float64
+        rᵢᵗ = ones(NV, T) .* rᵢᵗ
     end
 
     return SIR(εᵢᵗ, rᵢᵗ)
@@ -20,20 +22,19 @@ end
 
 function nodes_formatting(
     model::EpidemicModel{SIR}, 
-    obsprob::Function, 
-    ν::Array{Float64,3})
+    obsprob::Function)
 
     nodes = Vector{Node{SIR}}()
 
     for i in 1:nv(model.G)
-        obs = ones(2, model.T + 1)
+        obs = ones(3, model.T + 1)
         obs[1, :] = [obsprob(Ob, 0.0) for Ob in model.obsmat[i, :]]
         obs[2, :] = [obsprob(Ob, 1.0) for Ob in model.obsmat[i, :]]
         obs[3, :] = [obsprob(Ob, 2.0) for Ob in model.obsmat[i, :]]
 
         ∂ = neighbors(model.G, i)
 
-        ν∂ = [ν[k, i, :] for k in ∂]
+        ν∂ = [model.ν[k, i, :] for k in ∂]
 
         push!(nodes, Node(i, ∂, model.T, ν∂, obs, model.Disease))
         
@@ -44,30 +45,30 @@ end
 # function to fill the transfer matrix
 function fill_transmat_cav!(
     M::Array{Float64,3},
-    inode::Node,
+    inode::Node{SIR},
     iindex::Int,
-    jnode::Node,
+    jnode::Node{SIR},
     jindex::Int,
     sumargexp::SumM,
-    infectionmodel::SI)
+    infectionmodel::SIR)
     
-    M[1, 1, :] .= (exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1])).*(1 .- infectionmodel.εᵢᵗ) .* inode.obs[1, 1:end-1]
-    M[1, 2, :] .= (1 .- exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1]).*(1 .- infectionmodel.εᵢᵗ)) .* inode.obs[1, 1:end-1]
-    M[2, 2, :] .= (1 .- infectionmodel.rᵢᵗ) .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex][1:end-1]) .* inode.obs[2, 1:end-1]
-    M[2, 3, :] .= infectionmodel.rᵢᵗ .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex][1:end-1]) .* inode.obs[2, 1:end-1]
+    M[1, 1, :] .= (exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1])).*(1 .- infectionmodel.εᵢᵗ[inode.i, :]) .* inode.obs[1, 1:end-1]
+    M[1, 2, :] .= (1 .- exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1]).*(1 .- infectionmodel.εᵢᵗ[inode.i, :])) .* inode.obs[1, 1:end-1]
+    M[2, 2, :] .= (1 .- infectionmodel.rᵢᵗ[inode.i, :]) .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex][1:end-1]) .* inode.obs[2, 1:end-1]
+    M[2, 3, :] .= infectionmodel.rᵢᵗ[inode.i, :] .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex][1:end-1]) .* inode.obs[2, 1:end-1]
     M[3, 3, :] .= inode.obs[3, 1:end-1]
 end
 
 function fill_transmat_marg!(
     M::Array{Float64,3},
-    inode::Node,
+    inode::Node{SIR},
     sumargexp::SumM,
-    infectionmodel::SI)
+    infectionmodel::SIR)
     
-    M[1, 1, :] .= (exp.(sumargexp.summ[1:end-1])).*(1 .- infectionmodel.εᵢᵗ) .* inode.obs[1, 1:end-1]
-    M[1, 2, :] .= (1 .- exp.(sumargexp.summ[1:end-1]).*(1 .- infectionmodel.εᵢᵗ)) .* inode.obs[1, 1:end-1]
-    M[2, 2, :] .= (1 .- infectionmodel.rᵢᵗ) .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
-    M[2, 3, :] .= infectionmodel.rᵢᵗ .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
+    M[1, 1, :] .= (exp.(sumargexp.summ[1:end-1])).*(1 .- infectionmodel.εᵢᵗ[inode.i, :]) .* inode.obs[1, 1:end-1]
+    M[1, 2, :] .= (1 .- exp.(sumargexp.summ[1:end-1]).*(1 .- infectionmodel.εᵢᵗ[inode.i, :])) .* inode.obs[1, 1:end-1]
+    M[2, 2, :] .= (1 .- infectionmodel.rᵢᵗ[inode.i, :]) .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
+    M[2, 3, :] .= infectionmodel.rᵢᵗ[inode.i, :] .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
     M[3, 3, :] .= inode.obs[3, 1:end-1]
 end
 

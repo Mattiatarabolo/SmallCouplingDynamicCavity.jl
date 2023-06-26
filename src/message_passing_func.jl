@@ -1,5 +1,5 @@
 function update_single_message!(
-    jnode::Node,
+    jnode::Node{TI},
     iindex::Int,
     ρ::FBm,
     M::Array{Float64,3},
@@ -7,9 +7,9 @@ function update_single_message!(
     newmess::Message,
     damp::Float64,
     sumargexp::SumM,
-    inode::Node,
-    μ_cutoff::Float64)
-
+    inode::Node{TI},
+    μ_cutoff::Float64) where {TI <: InfectionModel}
+    
     clear!(updmess, newmess)
 
     updmess.lognumm .= log.(ρ.fwm) .+ log.(ρ.bwm)
@@ -75,9 +75,9 @@ function update_single_message!(
 end
 
 function compute_ρ!(
-    inode::Node,
+    inode::Node{TI},
     iindex::Int,
-    jnode::Node,
+    jnode::Node{TI},
     jindex::Int,
     sumargexp::SumM,
     M::Array{Float64,3},
@@ -103,8 +103,8 @@ function compute_ρ!(
 end
 
 function update_single_marginal!(
-    inode::Node, 
-    nodes::Vector{Node}, 
+    inode::Node{TI}, 
+    nodes::Vector{Node{TI}}, 
     sumargexp::SumM, 
     M::Array{Float64, 3}, 
     ρ::FBm, 
@@ -144,9 +144,9 @@ function update_single_marginal!(
 end
 
 function compute_sumargexp!(
-    inode::Node,
-    nodes::Vector{Node},
-    sumargexp::SumM)
+    inode::Node{TI},
+    nodes::Vector{Node{TI}},
+    sumargexp::SumM) where {TI <: InfectionModel}
 
     clear!(sumargexp)
 
@@ -160,8 +160,8 @@ function compute_sumargexp!(
 end
 
 function update_node!(
-    inode::Node, 
-    nodes::Vector{Node}, 
+    inode::Node{TI}, 
+    nodes::Vector{Node{TI}}, 
     sumargexp::SumM, 
     M::Array{Float64, 3}, 
     ρ::FBm, 
@@ -188,7 +188,7 @@ function update_node!(
 end
 
 function update_cavities!(
-    nodes::Vector{Node},
+    nodes::Vector{Node{TI}},
     sumargexp::SumM,
     M::Array{Float64,3},
     ρ::FBm,
@@ -211,7 +211,7 @@ function update_cavities!(
 end
 
 function compute_marginals!(
-    nodes::Vector{Node},
+    nodes::Vector{Node{TI}},
     sumargexp::SumM,
     M::Array{Float64,3},
     ρ::FBm, 
@@ -237,7 +237,7 @@ function run_SCDC(
     γ::Float64,
     maxiter::Int64,
     epsconv::Float64,
-    damp::Float64,
+    damp::Float64;
     μ_cutoff::Float64 = -Inf,
     callback::Function=(x...) -> nothing) where {TI <: InfectionModel}
 
