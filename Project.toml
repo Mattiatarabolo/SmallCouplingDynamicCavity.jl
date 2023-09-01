@@ -12,6 +12,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
 Distributions = "0.25"
+Documenter = "0.27"
 Graphs = "1"
 PyPlot = "2"
 SparseArrays = "1"
