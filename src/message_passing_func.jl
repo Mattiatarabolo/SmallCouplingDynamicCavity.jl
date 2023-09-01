@@ -34,7 +34,11 @@ function update_single_message!(
     newmess.μ .= jnode.cavities[iindex].μ.*damp .+ newmess.μ.*(1 - damp)
 
     ε = max(normupdate(jnode.cavities[iindex].m, newmess.m), normupdate(jnode.cavities[iindex].μ, newmess.μ))
-#= 
+
+    if isnan(ε)
+        throw(DomainError("NaN evaluated"))
+    end   
+    #= 
     if isnan(ε)
         #DEBUGGING       
         println("cavity updated i = $(inode.i)-> j = $(jnode.i)")
