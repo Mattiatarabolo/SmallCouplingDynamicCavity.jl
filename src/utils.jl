@@ -59,6 +59,15 @@ function ρ_norm(ρ::Vector{Float64})
     return ρ ./ sum(ρ)
 end
 
+"""
+    bethe_lattice(z, tmax, startfrom1)
+
+Generates a Bethe lattice (tree) with degree z and depth tmax. If startfrom1 = true the center of the tree is vertex 1.
+
+It returns a list where the first element is a list of vertices, and the second element is the list of edges.
+"""
+
+
 function bethe_lattice(z::Int,tmax::Int,startfrom1::Bool)
     # trivial case of tmax = 0, return only 1 node and empty set of edges
     tmax == 0 && return V = [0], Vector{Vector{Int}}(undef,0)
