@@ -1,5 +1,5 @@
 function update_single_message!(
-    jnode::Node{TI},
+    jnode::Node{TI,TG},
     iindex::Int,
     ρ::FBm,
     M::Array{Float64,3},
@@ -7,8 +7,8 @@ function update_single_message!(
     newmess::Message,
     damp::Float64,
     sumargexp::SumM,
-    inode::Node{TI},
-    μ_cutoff::Float64) where {TI <: InfectionModel}
+    inode::Node{TI,TG},
+    μ_cutoff::Float64) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
     
     clear!(updmess, newmess)
 
@@ -79,16 +79,16 @@ function update_single_message!(
 end
 
 function compute_ρ!(
-    inode::Node{TI},
+    inode::Node{TI,TG},
     iindex::Int,
-    jnode::Node{TI},
+    jnode::Node{TI,TG},
     jindex::Int,
     sumargexp::SumM,
     M::Array{Float64,3},
     ρ::FBm,
     prior::Array{Float64,2},
     T::Int,
-    infectionmodel::TI) where {TI <:InfectionModel}
+    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
 
     clear!(M, ρ)
 
@@ -107,8 +107,8 @@ function compute_ρ!(
 end
 
 function update_single_marginal!(
-    inode::Node{TI}, 
-    nodes::Vector{Node{TI}}, 
+    inode::Node{TI,TG}, 
+    nodes::Vector{Node{TI,TG}}, 
     sumargexp::SumM, 
     M::Array{Float64, 3}, 
     ρ::FBm, 
@@ -117,7 +117,7 @@ function update_single_marginal!(
     updmess::Updmess,
     newmarg::Marginal,
     μ_cutoff::Float64,
-    infectionmodel::TI) where {TI <:InfectionModel}
+    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
     
     compute_sumargexp!(inode, nodes, sumargexp)
 
@@ -148,9 +148,9 @@ function update_single_marginal!(
 end
 
 function compute_sumargexp!(
-    inode::Node{TI},
-    nodes::Vector{Node{TI}},
-    sumargexp::SumM) where {TI <: InfectionModel}
+    inode::Node{TI,TG},
+    nodes::Vector{Node{TI,TG}},
+    sumargexp::SumM) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
 
     clear!(sumargexp)
 
@@ -164,8 +164,8 @@ function compute_sumargexp!(
 end
 
 function update_node!(
-    inode::Node{TI}, 
-    nodes::Vector{Node{TI}}, 
+    inode::Node{TI,TG}, 
+    nodes::Vector{Node{TI,TG}}, 
     sumargexp::SumM, 
     M::Array{Float64, 3}, 
     ρ::FBm, 
@@ -176,7 +176,7 @@ function update_node!(
     newmarg::Marginal,
     damp::Float64,
     μ_cutoff::Float64,
-    infectionmodel::TI) where {TI <:InfectionModel}
+    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
 
     ε = 0.0
 
@@ -192,7 +192,7 @@ function update_node!(
 end
 
 function update_cavities!(
-    nodes::Vector{Node{TI}},
+    nodes::Vector{Node{TI,TG}},
     sumargexp::SumM,
     M::Array{Float64,3},
     ρ::FBm,
@@ -203,7 +203,7 @@ function update_cavities!(
     newmarg::Marginal,
     damp::Float64,
     μ_cutoff::Float64,
-    infectionmodel::TI) where {TI <:InfectionModel}
+    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
 
     ε = 0.0
 
@@ -215,7 +215,7 @@ function update_cavities!(
 end
 
 function compute_marginals!(
-    nodes::Vector{Node{TI}},
+    nodes::Vector{Node{TI,TG}},
     sumargexp::SumM,
     M::Array{Float64,3},
     ρ::FBm, 
@@ -224,7 +224,7 @@ function compute_marginals!(
     updmess::Updmess,
     newmarg::Marginal,
     μ_cutoff::Float64,
-    infectionmodel::TI) where {TI <:InfectionModel}
+    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
 
     for inode in nodes
         newmarg = update_single_marginal!(inode, nodes, sumargexp, M, ρ, prior, T, updmess, newmarg, μ_cutoff, infectionmodel)
@@ -236,14 +236,14 @@ end
 
 
 function run_SCDC(
-    model::EpidemicModel{TI},
+    model::EpidemicModel{TI,TG},
     obsprob::Function,
     γ::Float64,
     maxiter::Int64,
     epsconv::Float64,
     damp::Float64;
     μ_cutoff::Float64 = -Inf,
-    callback::Function=(x...) -> nothing) where {TI <: InfectionModel}
+    callback::Function=(x...) -> nothing) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
 
     # set prior (given an expected mean number of source patients γ)
     prior = zeros(n_states(model.Disease), nv(model.G))
