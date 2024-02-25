@@ -1,5 +1,3 @@
-nv(G::Vector{<:AbstractGraph}) = nv(G[1]) #convenience function for evolving graphs
-
 function clear!(
     M::Array{Float64,3}, 
     ρ::FBm)

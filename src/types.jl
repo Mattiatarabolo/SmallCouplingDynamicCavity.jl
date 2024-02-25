@@ -73,15 +73,33 @@ struct Marginal
     end
 end
 
+nv(G::Vector{<:AbstractGraph}) = Graphs.nv(G[1]) #convenience function for evolving graphs
 
-struct Node{TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
+struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    Disease::TI
+    G::TG
+    T::Int
+    ν::Array{Float64, 3}
+    obsmat::Matrix{Float64}
+
+    function EpidemicModel(infectionmodel::TI, G::TG, T::Int, ν::Array{Float64, 3}, obs::Matrix{Float64}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+        new{TI,TG}(infectionmodel, G, T, ν, obs)
+    end
+
+    function EpidemicModel(infectionmodel::TI, G::TG, T::Int, ν::Array{Float64, 3}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+        new{TI,TG}(infectionmodel, G, T, ν, zeros(nv(G),T+1))
+    end
+end
+
+
+struct Node{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     i::Int
     ∂::Vector{Int}
     ∂_idx::Dict{Int,Int}
     marg::Marginal
     cavities::Vector{Message}
     ρs::Vector{FBm}
-    νs::Vector{Float64}
+    νs::Vector{Vector{Float64}}
     obs::Array{Float64,2}
     model::EpidemicModel{TI,TG}
 
@@ -91,7 +109,7 @@ struct Node{TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
         T::Int, 
         νs::Vector{Vector{Float64}}, 
         obs::Array{Float64,2},
-        model::EpidemicModel{TI,TG}) where {TI <:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
+        model::EpidemicModel{TI,TG}) where {TI <:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
         new{TI,TG}(
             i,
@@ -99,30 +117,12 @@ struct Node{TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
             Dict(∂[idx] => idx for idx = 1:length(∂)),
             Marginal(i, T, model.Disease),
             collect([Message(i, j, T) for j in ∂]),
-            collect([FBm(T, model.Disease) for _ in 1:length(∂)]),
+            collect([FBm(T, model.Disease) for _ in ∂]),
             νs,
             obs,
             model)
     end
 end
-
-
-struct EpidemicModel{TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
-    Disease::TI
-    G::TG
-    T::Int
-    ν::Array{Float64, 3}
-    obsmat::Matrix{Float64}
-
-    function EpidemicModel(infectionmodel::TI, G::TG, T::Int, ν::Array{Float64, 3}, obs::Matrix{Float64}) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
-        new{TI,TG}(infectionmodel, G, T, ν, obs)
-    end
-
-    function EpidemicModel(infectionmodel::TI, G::TG, T::Int, ν::Array{Float64, 3}) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
-        new{TI,TG}(infectionmodel, G, T, ν, zeros(nv(G),T+1))
-    end
-end
-
 
 
 

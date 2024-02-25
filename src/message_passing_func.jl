@@ -8,7 +8,7 @@ function update_single_message!(
     damp::Float64,
     sumargexp::SumM,
     inode::Node{TI,TG},
-    μ_cutoff::Float64) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
+    μ_cutoff::Float64) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
     clear!(updmess, newmess)
 
@@ -88,7 +88,7 @@ function compute_ρ!(
     ρ::FBm,
     prior::Array{Float64,2},
     T::Int,
-    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
+    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     clear!(M, ρ)
 
@@ -117,7 +117,7 @@ function update_single_marginal!(
     updmess::Updmess,
     newmarg::Marginal,
     μ_cutoff::Float64,
-    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
+    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
     compute_sumargexp!(inode, nodes, sumargexp)
 
@@ -150,7 +150,7 @@ end
 function compute_sumargexp!(
     inode::Node{TI,TG},
     nodes::Vector{Node{TI,TG}},
-    sumargexp::SumM) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
+    sumargexp::SumM) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     clear!(sumargexp)
 
@@ -176,7 +176,7 @@ function update_node!(
     newmarg::Marginal,
     damp::Float64,
     μ_cutoff::Float64,
-    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
+    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     ε = 0.0
 
@@ -203,7 +203,7 @@ function update_cavities!(
     newmarg::Marginal,
     damp::Float64,
     μ_cutoff::Float64,
-    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
+    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     ε = 0.0
 
@@ -224,7 +224,7 @@ function compute_marginals!(
     updmess::Updmess,
     newmarg::Marginal,
     μ_cutoff::Float64,
-    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
+    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     for inode in nodes
         newmarg = update_single_marginal!(inode, nodes, sumargexp, M, ρ, prior, T, updmess, newmarg, μ_cutoff, infectionmodel)
@@ -243,7 +243,7 @@ function run_SCDC(
     epsconv::Float64,
     damp::Float64;
     μ_cutoff::Float64 = -Inf,
-    callback::Function=(x...) -> nothing) where {TI<:InfectionModel,TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
+    callback::Function=(x...) -> nothing) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     # set prior (given an expected mean number of source patients γ)
     prior = zeros(n_states(model.Disease), nv(model.G))

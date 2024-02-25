@@ -44,10 +44,10 @@ end
 
 
 function nodes_formatting(
-    model::EpidemicModel{SIR,Vector{<:AbstractGraph}}, 
-    obsprob::Function)
+    model::EpidemicModel{SIR,TG}, 
+    obsprob::Function) where {TG<:Vector{<:AbstractGraph}}
 
-    nodes = Vector{Node{SIR,Vector{<:AbstractGraph}}}()
+    nodes = Vector{Node{SIR,TG}}()
 
     for i in 1:nv(model.G)
         obs = ones(3, model.T + 1)
@@ -58,7 +58,7 @@ function nodes_formatting(
         ∂ = Vector{Int}()
 
         for t in 1:model.T+1
-            ∂ = union(neighbors(model.G[t], i))
+            ∂ = union(∂, neighbors(model.G[t], i))
         end
 
         ν∂ = [model.ν[k, i, :] for k in ∂]
@@ -77,7 +77,7 @@ function fill_transmat_cav!(
     jnode::Node{SIR,TG},
     jindex::Int,
     sumargexp::SumM,
-    infectionmodel::SIR) where {TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
+    infectionmodel::SIR) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
     M[1, 1, :] .= (exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1])).*(1 .- infectionmodel.εᵢᵗ[inode.i, :]) .* inode.obs[1, 1:end-1]
     M[1, 2, :] .= (1 .- exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1]).*(1 .- infectionmodel.εᵢᵗ[inode.i, :])) .* inode.obs[1, 1:end-1]
@@ -90,7 +90,7 @@ function fill_transmat_marg!(
     M::Array{Float64,3},
     inode::Node{SIR,TG},
     sumargexp::SumM,
-    infectionmodel::SIR) where {TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
+    infectionmodel::SIR) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
     M[1, 1, :] .= (exp.(sumargexp.summ[1:end-1])).*(1 .- infectionmodel.εᵢᵗ[inode.i, :]) .* inode.obs[1, 1:end-1]
     M[1, 2, :] .= (1 .- exp.(sumargexp.summ[1:end-1]).*(1 .- infectionmodel.εᵢᵗ[inode.i, :])) .* inode.obs[1, 1:end-1]
@@ -103,7 +103,7 @@ end
 function sim_epidemics(
     model::EpidemicModel{SIR,TG};
     patient_zero::Union{Vector{Int},Nothing}=nothing,
-    γ::Union{Float64,Nothing}=nothing) where {TG<:Union{AbstractGraph,Vector{<:AbstractGraph}}}
+    γ::Union{Float64,Nothing}=nothing) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     inf₀ = false
     if patient_zero === nothing && γ !== nothing
