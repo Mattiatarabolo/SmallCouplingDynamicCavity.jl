@@ -2,10 +2,10 @@
 
 *Small Coupling expansion of the Dynamic Cavity method for epidemic inference*
 
-[![Build Status](https://github.com/Mattiatarabolo/SmallCouplingDynamicCavity.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/Mattiatarabolo/SmallCouplingDynamicCavity.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://MattiaTarabolo.github.io/SmallCouplingDynamicCavity.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://MattiaTarabolo.github.io/SmallCouplingDynamicCavity.jl/dev)
-[![codecov.io](http://codecov.io/github/Mattiatarabolo/SmallCouplingDynamicCavity.jl/coverage.svg?branch=main)](http://codecov.io/github/Mattiatarabolo/SmallCouplingDynamicCavity.jl/coverage.svg?branch=main)
+[![Build Status](https://github.com/Mattiatarabolo/SmallCouplingDynamicCavity.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/Mattiatarabolo/SmallCouplingDynamicCavity.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![codecov.io](https://app.codecov.io/github/Mattiatarabolo/SmallCouplingDynamicCavity.jl/tree/main)](https://app.codecov.io/github/Mattiatarabolo/SmallCouplingDynamicCavity.jl/tree/main)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 
