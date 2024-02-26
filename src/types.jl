@@ -73,11 +73,10 @@ struct Marginal
     end
 end
 
-nv(G::Vector{<:AbstractGraph}) = Graphs.nv(G[1]) #convenience function for evolving graphs
-
 struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     Disease::TI
     G::TG
+    N::Int
     T::Int
     ν::Array{Float64, 3}
     obsmat::Matrix{Float64}
@@ -88,13 +87,13 @@ struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:Abstr
             infectionmodel::TI, 
             G::TG, T::Int, 
             ν::Array{Float64, 3}, 
-            obs::Matrix{Float64}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+            obs::Matrix{Float64}) where {TI<:InfectionModel,TG<:AbstractGraph}
 
     Defines the epidemic model.
 
     # Arguments
     * `infectionmodel`: Infection model. Currently are implemented SI, SIR, SIS and SIRS infection models.
-    * `G`: Contact graph. Can be either an AbstractGraph (contact graph constant over time) or a T+1 vector of AbstractGraph (time varying contact graph)
+    * `G`: Contact graph. It is an AbstractGraph (contact graph constant over time).
     * `T`: Number of time-steps.
     * `ν`: Infection couplings. It is a NVxNVx(T+1) Array where νᵗᵢⱼ=log(1-λᵗᵢⱼ), with λᵗᵢⱼ being the infection probability from individual i to individual j at time t.
     * `obs`: Observations matrix. It is a NVx(T+1) Matrix, where obsᵗᵢ is the observation of individual i at time t: it is equal to -1.0 if not observed, 0.0 if S, 1.0 if I, 2.0 if R (only for SIR and SIRS).
@@ -103,29 +102,74 @@ struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:Abstr
         infectionmodel::TI, 
         G::TG, T::Int, 
         ν::Array{Float64, 3}, 
-        obs::Matrix{Float64}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
-        new{TI,TG}(infectionmodel, G, T, ν, obs)
+        obs::Matrix{Float64}) where {TI<:InfectionModel,TG<:AbstractGraph}
+        new{TI,TG}(infectionmodel, G, nv(G), T, ν, obs)
     end
 
     """
         EpidemicModel(
             infectionmodel::TI, 
             G::TG, T::Int, 
-            ν::Array{Float64, 3}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+            ν::Array{Float64, 3}, 
+            obs::Matrix{Float64}) where {TI<:InfectionModel,TG<:Vector{<:AbstractGraph}}
+
+    Defines the epidemic model.
+
+    # Arguments
+    * `infectionmodel`: Infection model. Currently are implemented SI, SIR, SIS and SIRS infection models.
+    * `G`: Contact graph. It is a T+1 vector of AbstractGraph (time varying contact graph).
+    * `T`: Number of time-steps.
+    * `ν`: Infection couplings. It is a NVxNVx(T+1) Array where νᵗᵢⱼ=log(1-λᵗᵢⱼ), with λᵗᵢⱼ being the infection probability from individual i to individual j at time t.
+    * `obs`: Observations matrix. It is a NVx(T+1) Matrix, where obsᵗᵢ is the observation of individual i at time t: it is equal to -1.0 if not observed, 0.0 if S, 1.0 if I, 2.0 if R (only for SIR and SIRS).
+    """
+    function EpidemicModel(
+        infectionmodel::TI, 
+        G::TG, T::Int, 
+        ν::Array{Float64, 3}, 
+        obs::Matrix{Float64}) where {TI<:InfectionModel,TG<:Vector{<:AbstractGraph}}
+        new{TI,TG}(infectionmodel, G, nv(G[1]), T, ν, obs)
+    end
+
+    """
+        EpidemicModel(
+            infectionmodel::TI, 
+            G::TG, T::Int, 
+            ν::Array{Float64, 3}) where {TI<:InfectionModel,TG<:AbstractGraph}
 
     Define the epidemic model.
 
     # Arguments
     * `infectionmodel`: Infection model. Currently are implemented SI, SIR, SIS and SIRS infection models.
-    * `G`: Contact graph. Can be either an AbstractGraph (contact graph constant over time) or a T+1 vector of AbstractGraph (time varying contact graph)
+    * `G`: Contact graph. It is an AbstractGraph (contact graph constant over time).
     * `T`: Number of time-steps.
     * `ν`: Infection couplings. It is a NVxNVx(T+1) Array where νᵗᵢⱼ=log(1-λᵗᵢⱼ), with λᵗᵢⱼ being the infection probability from individual i to individual j at time t.
     """
     function EpidemicModel(
         infectionmodel::TI, 
         G::TG, T::Int, 
-        ν::Array{Float64, 3}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
-        new{TI,TG}(infectionmodel, G, T, ν, zeros(nv(G),T+1))
+        ν::Array{Float64, 3}) where {TI<:InfectionModel,TG<:AbstractGraph}
+        new{TI,TG}(infectionmodel, G, nv(G), T, ν, zeros(nv(G),T+1))
+    end
+
+    """
+        EpidemicModel(
+            infectionmodel::TI, 
+            G::TG, T::Int, 
+            ν::Array{Float64, 3}) where {TI<:InfectionModel,TG<:Vector{<:AbstractGraph}}
+
+    Define the epidemic model.
+
+    # Arguments
+    * `infectionmodel`: Infection model. Currently are implemented SI, SIR, SIS and SIRS infection models.
+    * `G`: Contact graph. It is a T+1 vector of AbstractGraph (time varying contact graph).
+    * `T`: Number of time-steps.
+    * `ν`: Infection couplings. It is a NVxNVx(T+1) Array where νᵗᵢⱼ=log(1-λᵗᵢⱼ), with λᵗᵢⱼ being the infection probability from individual i to individual j at time t.
+    """
+    function EpidemicModel(
+        infectionmodel::TI, 
+        G::TG, T::Int, 
+        ν::Array{Float64, 3}) where {TI<:InfectionModel,TG<:Vector{<:AbstractGraph}}
+        new{TI,TG}(infectionmodel, G, nv(G[1]), T, ν, zeros(nv(G[1]),T+1))
     end
 end
 

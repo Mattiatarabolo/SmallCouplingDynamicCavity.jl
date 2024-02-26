@@ -267,7 +267,7 @@ function run_SCDC(
     callback::Function=(x...) -> nothing) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     # set prior (given an expected mean number of source patients γ)
-    prior = zeros(n_states(model.Disease), nv(model.G))
+    prior = zeros(n_states(model.Disease), model.N)
     prior[1, :] .= (1 - γ) # x_i = S
     prior[2, :] .= γ # x_i = I
 

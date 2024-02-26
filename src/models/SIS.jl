@@ -40,7 +40,7 @@ function nodes_formatting(
 
     nodes = Vector{Node{SIS,AbstractGraph}}()
 
-    for i in 1:nv(model.G)
+    for i in 1:model.N
         obs = ones(2, model.T + 1)
         obs[1, :] = [obsprob(Ob, 0.0) for Ob in model.obsmat[i, :]]
         obs[2, :] = [obsprob(Ob, 1.0) for Ob in model.obsmat[i, :]]
@@ -61,7 +61,7 @@ function nodes_formatting(
 
     nodes = Vector{Node{SIS,TG}}()
 
-    for i in 1:nv(model.G)
+    for i in 1:model.N
         obs = ones(2, model.T + 1)
         obs[1, :] = [obsprob(Ob, 0.0) for Ob in model.obsmat[i, :]]
         obs[2, :] = [obsprob(Ob, 1.0) for Ob in model.obsmat[i, :]]
@@ -129,23 +129,23 @@ function sim_epidemics(
     inf₀ = false
     if patient_zero === nothing && γ !== nothing
         while !inf₀
-            patient_zero = rand(Binomial(1,γ), nv(model.G))
+            patient_zero = rand(Binomial(1,γ), model.N)
             patient_zero = findall(x->x==1, patient_zero)
             inf₀ = !isempty(patient_zero)
         end
     elseif patient_zero === nothing && γ === nothing
         while !inf₀
-            patient_zero = rand(Binomial(1,1/nv(model.G)), nv(model.G))
+            patient_zero = rand(Binomial(1,1/model.N), model.N)
             patient_zero = findall(x->x==1, patient_zero)
             inf₀ = !isempty(patient_zero)
         end
     end
 
-    config = zeros(nv(model.G), model.T + 1)
+    config = zeros(model.N, model.T + 1)
 
     config[patient_zero,1] .+= 1.0
 
-    hs = zeros(nv(model.G))
+    hs = zeros(model.N)
     for t in 1:model.T
         hs .= (config[:, t]' * model.ν[:, :, t])'
         config[:, t+1] .= [x * rand(Bernoulli(1 - r)) + (1 - x) * rand(Bernoulli(1 - exp(h))) for (x, h, r) in zip(config[:, t], hs, model.Disease.rᵢᵗ[:, t])]
