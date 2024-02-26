@@ -1,3 +1,6 @@
+"""
+Small Coupling expansion of the Dynamic Cavity method for epidemic inference
+"""
 module SmallCouplingDynamicCavity
 
 using Graphs, Distributions

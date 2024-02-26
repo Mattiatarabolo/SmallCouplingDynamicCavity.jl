@@ -4,7 +4,17 @@ struct SIR <: InfectionModel
 end
 n_states(X::SIR) = 3
 
-# formatting
+"""
+SIR(εᵢᵗ::Union{Float64,Array{Float64,2}}, rᵢᵗ::Union{Float64,Array{Float64,2}}, NV::Int, T::Int)
+
+Defines the SIS infection model.
+
+# Arguments
+* `εᵢᵗ`: Self-infection probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
+* `rᵢᵗ`: Recovery probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
+* `NV`: Number of nodes of the contact graph.
+* `T`: Number of time-steps.
+"""
 function SIR(
     εᵢᵗ::Union{Float64,Array{Float64,2}},
     rᵢᵗ::Union{Float64,Array{Float64,2}},
@@ -99,7 +109,16 @@ function fill_transmat_marg!(
     M[3, 3, :] .= inode.obs[3, 1:end-1]
 end
 
-# sample
+"""
+    sim_epidemics(model::EpidemicModel{SIR,TG}; patient_zero=nothing, γ=nothing)
+
+Simulates the epidemic outbreak given a SIR model. 
+
+# Arguments
+* `model`: The SIR epidemic model.
+* `patient_zero`: Vector of patients zero. Default is "nothing", meaning that the patients zero are chosen at random with probability γ.
+* `γ`: Probability of being a patient zero. Default is "nothing", meaning that it is fixed to0 1/NV, where NV is the number of nodes of the contact graph.
+"""
 function sim_epidemics(
     model::EpidemicModel{SIR,TG};
     patient_zero::Union{Vector{Int},Nothing}=nothing,
@@ -112,7 +131,7 @@ function sim_epidemics(
             patient_zero = findall(x->x==1, patient_zero)
             inf₀ = !isempty(patient_zero)
         end
-    elseif patient_zero === nothing && γ !== nothing
+    elseif patient_zero === nothing && γ === nothing
         while !inf₀
             patient_zero = rand(Binomial(1,1/nv(model.G)), nv(model.G))
             patient_zero = findall(x->x==1, patient_zero)

@@ -230,11 +230,24 @@ function compute_marginals!(
         newmarg = update_single_marginal!(inode, nodes, sumargexp, M, ρ, prior, T, updmess, newmarg, μ_cutoff, infectionmodel)
         inode.marg.m .= newmarg.m
     end
-
-    
 end
 
+"""
+run_SCDC(model, obsprob::Function, γ::Float64, maxiter::Int64, epsconv::Float64, damp::Float64; μ_cutoff::Float64 = -Inf, callback::Function=(x...) -> nothing)
 
+Runs the SCDC inference.
+
+# Arguments
+* `model`: Epidemic model.
+* `obsprob`: Evidence (likelihood) probability p(O|x) of an obseravtion O given the planted state x.
+* `γ`: Probability of being a patient zero.
+* `maxiter`: Maximum number of iterations.
+* `epsconv`: Convergence threshold of the algorithm.
+* `damp`: Damping factor of the algorithm.
+* `μ_cutoff`: Lower cut-off for the values of μ.
+* `callback`: Callback function.
+
+"""
 function run_SCDC(
     model::EpidemicModel{TI,TG},
     obsprob::Function,
