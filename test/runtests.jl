@@ -10,8 +10,8 @@ using Aqua
 end
 
 include("simSI.jl")
-#=include("simSIR.jl")
-include("simSIS.jl")
+include("simSIR.jl")
+#=include("simSIS.jl")
 include("simSIRS.jl")
 include("inferenceSI.jl")
 include("inferenceSIR.jl")

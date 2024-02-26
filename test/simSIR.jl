@@ -1,4 +1,4 @@
-@testset "SimSI" begin
+@testset "SimSIR" begin
     NV = 10 # number of graph vertices
     k = 3 # average degree
     
@@ -9,7 +9,8 @@
     # define the constants
     T = 5 # total time
     γ = 1/NV # Patient zero probability
-    λ₀ = 0.3 # Infection rate
+    λ₀ = 0.7 # Infection rate
+    r₀ = 0.3 # Recovery rate
 
     # constant infection probability
     λ = zeros(NV, NV, T+1)
@@ -19,22 +20,22 @@
     end
 
     # define de epidemic model
-    infectionmodel = SI(ε_autoinf, NV, T)
+    infectionmodel = SIR(0.0, r₀, NV, T)
     model = EpidemicModel(infectionmodel, G, T, log.(1 .- λ))
 
     # epidemic simulation
     Random.seed!(3)
     config = sim_epidemics(model, patient_zero=[1])
 
-    configtest=[1.0  1.0  1.0  1.0  1.0  1.0;
-    0.0  0.0  0.0  1.0  1.0  1.0;
-    0.0  0.0  0.0  0.0  0.0  0.0;
+    configtest=[1.0  2.0  2.0  2.0  2.0  2.0;
+    0.0  1.0  1.0  1.0  2.0  2.0;
+    0.0  0.0  0.0  0.0  1.0  2.0;
+    0.0  0.0  1.0  1.0  1.0  2.0;
     0.0  0.0  0.0  0.0  1.0  1.0;
-    0.0  0.0  0.0  0.0  1.0  1.0;
-    0.0  0.0  0.0  0.0  0.0  0.0;
-    0.0  0.0  0.0  0.0  0.0  0.0;
     0.0  0.0  0.0  0.0  0.0  1.0;
-    0.0  0.0  0.0  0.0  0.0  0.0;
+    0.0  0.0  0.0  0.0  1.0  2.0;
+    0.0  0.0  0.0  0.0  1.0  2.0;
+    0.0  0.0  0.0  1.0  1.0  1.0;
     0.0  0.0  0.0  0.0  0.0  0.0]
 
     @test config ≈ configtest
