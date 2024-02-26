@@ -1,5 +1,9 @@
 # The SmallCouplingDynamicCavity Module
 
+```@docs
+SmallCouplingDynamicCavity
+```
+
 ## Module Index
 
 ```@index
