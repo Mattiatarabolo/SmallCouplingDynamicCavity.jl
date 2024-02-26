@@ -1,7 +1,7 @@
 name = "SmallCouplingDynamicCavity"
 uuid = "1607259e-80f4-4675-b495-cb9c54bacb3f"
 authors = ["Mattia tarabolo <mattia.tarabolo@gmail.com>"]
-version = "3.0.0"
+version = "3.0.1"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
