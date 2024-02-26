@@ -1,5 +1,7 @@
 """
-Small Coupling expansion of the Dynamic Cavity method for epidemic inference
+Module for "SmallCouplingDynamicCavity.jl" -- A package for a Small Coupling expansion of the Dynamic Cavity method for epidemic inference.
+
+
 """
 module SmallCouplingDynamicCavity
 

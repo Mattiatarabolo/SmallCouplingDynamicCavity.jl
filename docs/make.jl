@@ -7,6 +7,7 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Guide" => "guide.md",
+        "Functions" => "functions.md"
     ],
     format = Documenter.HTML(prettyurls = false),
     modules = [SmallCouplingDynamicCavity]

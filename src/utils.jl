@@ -60,7 +60,7 @@ function ρ_norm(ρ::Vector{Float64})
 end
 
 """
-    bethe_lattice(z, tmax, startfrom1)
+    bethe_lattice(z::Int,tmax::Int,startfrom1::Bool)
 
 Generates a Bethe lattice (tree) with degree z and depth tmax. If startfrom1 = true the center of the tree is vertex 1.
 

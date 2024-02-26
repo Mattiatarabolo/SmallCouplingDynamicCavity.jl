@@ -233,7 +233,15 @@ function compute_marginals!(
 end
 
 """
-run_SCDC(model, obsprob::Function, γ::Float64, maxiter::Int64, epsconv::Float64, damp::Float64; μ_cutoff::Float64 = -Inf, callback::Function=(x...) -> nothing)
+    run_SCDC(
+        model::EpidemicModel{TI,TG},
+        obsprob::Function,
+        γ::Float64,
+        maxiter::Int64,
+        epsconv::Float64,
+        damp::Float64;
+        μ_cutoff::Float64 = -Inf,
+        callback::Function=(x...) -> nothing) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
 Runs the SCDC inference.
 

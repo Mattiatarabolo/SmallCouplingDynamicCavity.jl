@@ -84,7 +84,11 @@ struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:Abstr
 
 
     """
-    EpidemicModel(infectionmodel, G, T::Int, ν::Array{Float64, 3}, obs::Matrix{Float64})
+        EpidemicModel(
+            infectionmodel::TI, 
+            G::TG, T::Int, 
+            ν::Array{Float64, 3}, 
+            obs::Matrix{Float64}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     Defines the epidemic model.
 
@@ -95,12 +99,19 @@ struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:Abstr
     * `ν`: Infection couplings. It is a NVxNVx(T+1) Array where νᵗᵢⱼ=log(1-λᵗᵢⱼ), with λᵗᵢⱼ being the infection probability from individual i to individual j at time t.
     * `obs`: Observations matrix. It is a NVx(T+1) Matrix, where obsᵗᵢ is the observation of individual i at time t: it is equal to -1.0 if not observed, 0.0 if S, 1.0 if I, 2.0 if R (only for SIR and SIRS).
     """
-    function EpidemicModel(infectionmodel::TI, G::TG, T::Int, ν::Array{Float64, 3}, obs::Matrix{Float64}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    function EpidemicModel(
+        infectionmodel::TI, 
+        G::TG, T::Int, 
+        ν::Array{Float64, 3}, 
+        obs::Matrix{Float64}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
         new{TI,TG}(infectionmodel, G, T, ν, obs)
     end
 
     """
-    EpidemicModel(infectionmodel, G, T::Int, ν::Array{Float64, 3})
+        EpidemicModel(
+            infectionmodel::TI, 
+            G::TG, T::Int, 
+            ν::Array{Float64, 3}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     Define the epidemic model.
 
@@ -110,7 +121,10 @@ struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:Abstr
     * `T`: Number of time-steps.
     * `ν`: Infection couplings. It is a NVxNVx(T+1) Array where νᵗᵢⱼ=log(1-λᵗᵢⱼ), with λᵗᵢⱼ being the infection probability from individual i to individual j at time t.
     """
-    function EpidemicModel(infectionmodel::TI, G::TG, T::Int, ν::Array{Float64, 3}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    function EpidemicModel(
+        infectionmodel::TI, 
+        G::TG, T::Int, 
+        ν::Array{Float64, 3}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
         new{TI,TG}(infectionmodel, G, T, ν, zeros(nv(G),T+1))
     end
 end

@@ -5,7 +5,11 @@ end
 n_states(X::SIR) = 3
 
 """
-SIR(εᵢᵗ::Union{Float64,Array{Float64,2}}, rᵢᵗ::Union{Float64,Array{Float64,2}}, NV::Int, T::Int)
+    SIR(
+        εᵢᵗ::Union{Float64,Array{Float64,2}},
+        rᵢᵗ::Union{Float64,Array{Float64,2}},
+        NV::Int,
+        T::Int)
 
 Defines the SIS infection model.
 
@@ -110,7 +114,10 @@ function fill_transmat_marg!(
 end
 
 """
-    sim_epidemics(model::EpidemicModel{SIR,TG}; patient_zero=nothing, γ=nothing)
+    sim_epidemics(
+        model::EpidemicModel{SIR,TG};
+        patient_zero::Union{Vector{Int},Nothing}=nothing,
+        γ::Union{Float64,Nothing}=nothing) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
 Simulates the epidemic outbreak given a SIR model. 
 
