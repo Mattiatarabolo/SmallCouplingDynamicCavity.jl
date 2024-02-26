@@ -3,6 +3,8 @@
 *Small Coupling expansion of the Dynamic Cavity method for epidemic inference*
 
 [![Build Status](https://github.com/Mattiatarabolo/SmallCouplingDynamicCavity.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/Mattiatarabolo/SmallCouplingDynamicCavity.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[//]: # [![codecov.io](http://codecov.io/github/Mattiatarabolo/SmallCouplingDynamicCavity.jl/coverage.svg?branch=main)](http://codecov.io/github/Mattiatarabolo/SmallCouplingDynamicCavity.jl/coverage.svg?branch=main)
+
 
 
 ## Overview
