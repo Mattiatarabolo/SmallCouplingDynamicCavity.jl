@@ -17,6 +17,6 @@ makedocs(
 # See "Hosting Documentation" and deploydocs() in the Documenter manual
 # for more information.
 deploydocs(
-    repo = "https://github.com/Mattiatarabolo/SmallCouplingDynamicCavity.jl.git",
+    repo = "github.com/Mattiatarabolo/SmallCouplingDynamicCavity.jl.git",
     devbranch = "main"
 )
