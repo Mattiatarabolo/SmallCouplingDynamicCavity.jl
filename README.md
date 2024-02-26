@@ -5,7 +5,7 @@
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://MattiaTarabolo.github.io/SmallCouplingDynamicCavity.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://MattiaTarabolo.github.io/SmallCouplingDynamicCavity.jl/dev)
 [![Build Status](https://github.com/Mattiatarabolo/SmallCouplingDynamicCavity.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/Mattiatarabolo/SmallCouplingDynamicCavity.jl/actions/workflows/CI.yml?query=branch%3Amain)
-[![codecov.io](https://app.codecov.io/github/Mattiatarabolo/SmallCouplingDynamicCavity.jl/tree/main)](https://app.codecov.io/github/Mattiatarabolo/SmallCouplingDynamicCavity.jl/tree/main)
+[![codecov](https://codecov.io/gh/Mattiatarabolo/SmallCouplingDynamicCavity.jl/graph/badge.svg?token=D8420BXN5K)](https://codecov.io/gh/Mattiatarabolo/SmallCouplingDynamicCavity.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 
