@@ -1,6 +1,7 @@
 using SmallCouplingDynamicCavity
 using Graphs
 using Random
+using JLD2
 using Test
 using Aqua
 
@@ -9,13 +10,9 @@ using Aqua
     Aqua.test_ambiguities(SmallCouplingDynamicCavity)
 end
 
-include("simSI.jl")
-include("simSIR.jl")
-#=include("simSIS.jl")
-include("simSIRS.jl")
-include("inferenceSI.jl")
-include("inferenceSIR.jl")
-include("inferenceSISjl")
-include("inferenceSIRS.jl")=#
+include("testSI.jl")
+include("testSIR.jl")
+include("testSIS.jl")
+include("testSIRS.jl")
 
-nothing
+#nothing
