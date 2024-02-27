@@ -1,37 +1,41 @@
 NV = 10 # number of graph vertices
 k = 3 # average degree
 
-#genrate an Erdos-Renyi random graph with average connectivity k
-Random.seed!(1)
-G = erdos_renyi(NV, k/NV)
-
 # define the constants
 T = 5 # total time
 γ = 1/NV # Patient zero probability
 λ₀ = 0.7 # Infection rate
-r₀ = 0.3 # Recovery rate
+r₀ = 0.2 # Recovery rate
+σ₀ = 0.3 # Loss of immunity rate
 
-# constant infection probability
+G = Vector{SimpleGraph{Int64}}()
 λ = zeros(NV, NV, T+1)
-for e in edges(G)
-    λ[src(e), dst(e), :] = ones(T+1) * λ₀
-    λ[dst(e), src(e), :] = ones(T+1) * λ₀
+
+#genrate Erdos-Renyi random graphs with average connectivity k
+Random.seed!(1)
+for t in 1:T+1
+    g = erdos_renyi(NV, k/NV)
+    push!(G,g)
+    for e in edges(g)
+        λ[src(e), dst(e), t] = rand() * λ₀
+        λ[dst(e), src(e), t] = rand() * λ₀
+    end
 end
 
 # define de epidemic model
 infectionmodel = SIR(0.0, r₀, NV, T)
 model = EpidemicModel(infectionmodel, G, T, log.(1 .- λ))
 
-configtest=[1.0  2.0  2.0  2.0  2.0  2.0;
-0.0  1.0  1.0  1.0  2.0  2.0;
-0.0  0.0  0.0  0.0  1.0  2.0;
-0.0  0.0  1.0  1.0  1.0  2.0;
-0.0  0.0  0.0  0.0  1.0  1.0;
-0.0  0.0  0.0  0.0  0.0  1.0;
-0.0  0.0  0.0  0.0  1.0  2.0;
-0.0  0.0  0.0  0.0  1.0  2.0;
-0.0  0.0  0.0  1.0  1.0  1.0;
-0.0  0.0  0.0  0.0  0.0  0.0]
+configtest=[1.0 1.0 1.0 2.0 2.0 2.0; 
+            0.0 1.0 1.0 1.0 2.0 2.0; 
+            0.0 0.0 0.0 0.0 0.0 0.0; 
+            0.0 0.0 0.0 1.0 1.0 2.0; 
+            0.0 0.0 0.0 0.0 0.0 0.0; 
+            0.0 0.0 0.0 0.0 0.0 1.0; 
+            0.0 0.0 0.0 0.0 1.0 2.0; 
+            0.0 0.0 1.0 1.0 2.0 2.0; 
+            0.0 0.0 0.0 0.0 0.0 0.0; 
+            0.0 0.0 0.0 0.0 1.0 1.0]
 
 # generate observations at the last time
 # define the observation probability
@@ -57,9 +61,9 @@ maxiter::Int = 5e2 # max number of iterations
 damp::Float64 = 0.1 # damping factor
 μ_cutoff::Float64 = -1 # cutoff for convergence
 
-margtest = load("data/margSIR.jld2", "marg")
+margtest = load("data/margSIR_timevarying.jld2", "marg")
 
-@testset "SimSIR" begin
+@testset "SimSIR_timevarying" begin
     # epidemic simulation
     Random.seed!(3)
     config = sim_epidemics(model, patient_zero=[1])
@@ -67,7 +71,7 @@ margtest = load("data/margSIR.jld2", "marg")
     @test config ≈ configtest
 end
 
-@testset "inferenceSIR" begin
+@testset "inferenceSIR_timevarying" begin
     Random.seed!(1)
     nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff)
 

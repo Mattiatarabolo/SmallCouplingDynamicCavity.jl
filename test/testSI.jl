@@ -42,7 +42,7 @@ function obsprob(Ob::Float64, x::Float64)
     end
 end
 
-obsmat = ones(nv(G), T+1) * (-1.0)
+obsmat = ones(NV, T+1) * (-1.0)
 for iₗ in 1:NV
     obsmat[iₗ, end] = configtest[iₗ, end]
 end

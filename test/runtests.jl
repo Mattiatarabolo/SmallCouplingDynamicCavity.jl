@@ -14,5 +14,9 @@ include("testSI.jl")
 include("testSIR.jl")
 include("testSIS.jl")
 include("testSIRS.jl")
+include("testSI_timevarying.jl")
+include("testSIR_timevarying.jl")
+include("testSIS_timevarying.jl")
+include("testSIRS_timevarying.jl")
 
 #nothing
