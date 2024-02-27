@@ -35,10 +35,10 @@ function SIR(
 end
 
 function nodes_formatting(
-    model::EpidemicModel{SIR,AbstractGraph}, 
-    obsprob::Function)
+    model::EpidemicModel{SIR,TG}, 
+    obsprob::Function) where {TG<:AbstractGraph}
 
-    nodes = Vector{Node{SIR,AbstractGraph}}()
+    nodes = Vector{Node{SIR,TG}}()
 
     for i in 1:model.N
         obs = ones(3, model.T + 1)

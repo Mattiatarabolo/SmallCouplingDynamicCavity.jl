@@ -28,10 +28,10 @@ function SI(
 end
 
 function nodes_formatting(
-    model::EpidemicModel{SI,AbstractGraph}, 
-    obsprob::Function)
+    model::EpidemicModel{SI,TG}, 
+    obsprob::Function) where {TG<:AbstractGraph}
 
-    nodes = Vector{Node{SI,AbstractGraph}}()
+    nodes = Vector{Node{SI,TG}}()
 
     for i in 1:model.N
         obs = ones(2, model.T + 1)

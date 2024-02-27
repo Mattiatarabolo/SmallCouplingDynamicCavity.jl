@@ -42,10 +42,10 @@ function SIRS(
 end
 
 function nodes_formatting(
-    model::EpidemicModel{SIRS,AbstractGraph}, 
-    obsprob::Function)
+    model::EpidemicModel{SIRS,TG}, 
+    obsprob::Function) where {TG<:AbstractGraph}
 
-    nodes = Vector{Node{SIRS,AbstractGraph}}()
+    nodes = Vector{Node{SIRS,TG}}()
 
     for i in 1:model.N
         obs = ones(3, model.T + 1)
