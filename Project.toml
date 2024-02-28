@@ -1,10 +1,11 @@
 name = "SmallCouplingDynamicCavity"
 uuid = "1607259e-80f4-4675-b495-cb9c54bacb3f"
 authors = ["Mattia tarabolo <mattia.tarabolo@gmail.com>"]
-version = "3.0.2"
+version = "3.0.3"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"

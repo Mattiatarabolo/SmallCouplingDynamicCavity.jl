@@ -12,11 +12,10 @@ SmallCouplingDynamicCavity
 
 ```@index
 Modules = [SmallCouplingDynamicCavity]
-Order   = [:constant, :type, :function, :macro]
 ```
 ## Detailed API
 
 ```@autodocs
 Modules = [SmallCouplingDynamicCavity]
-Order   = [:constant, :type, :function, :macro]
+Pages   = ["types.jl", "utils.jl", "message_passing_func.jl", "models/SI.jl", "models/SIR.jl","models/SIS.jl", "models/SIRS.jl"]
 ```

@@ -1,11 +1,14 @@
 """
 Module for "SmallCouplingDynamicCavity.jl" -- A package for a Small Coupling expansion of the Dynamic Cavity method for epidemic inference.
 
+# Exports
+
+$(EXPORTS)
 
 """
 module SmallCouplingDynamicCavity
 
-using Graphs, Distributions
+using Graphs, Distributions, DocStringExtensions
 
 export sim_epidemics, run_SCDC, ROC_curve, bethe_lattice, SI, SIR, SIS, SIRS, EpidemicModel
 

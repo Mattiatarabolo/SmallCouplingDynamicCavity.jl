@@ -1,9 +1,24 @@
+"""
+    struct SIRS <: InfectionModel
+        εᵢᵗ::Array{Float64, 2} # Autoinfection probabilities
+        rᵢᵗ::Array{Float64, 2} # Recovery probabilities
+        σᵢᵗ::Array{Float64, 2} # Loss of immunity probabilities
+    end
+
+The `SIRS` struct represents the SIRS (Susceptible-Infected-Recovered-Susceptible) infection model.
+
+# Fields
+- `εᵢᵗ`: An NVxT array representing the self-infection probabilities over time, where NV is the number of nodes and T is the number of time-steps. Each element εᵢᵗ[i, t] denotes the probability of node i infecting itself at time t.
+- `rᵢᵗ`: An NVxT array representing the recovery probabilities over time, where NV is the number of nodes and T is the number of time-steps. Each element rᵢᵗ[i, t] denotes the probability of node i recovering from infection at time t.
+- `σᵢᵗ`: An NVxT array representing the loss of immunity probabilities over time, where NV is the number of nodes and T is the number of time-steps. Each element σᵢᵗ[i, t] denotes the probability of node i losing immunity and becoming susceptible again at time t.
+
+"""
+
 struct SIRS <: InfectionModel
-    εᵢᵗ::Array{Float64,2} # autoinfection
-    rᵢᵗ::Array{Float64,2} # I->R
-    σᵢᵗ::Array{Float64,2} # R->S
+    εᵢᵗ::Array{Float64, 2} # Autoinfection probabilities
+    rᵢᵗ::Array{Float64, 2} # Recovery probabilities
+    σᵢᵗ::Array{Float64, 2} # Loss of immunity probabilities
 end
-n_states(X::SIRS) = 3
 
 """
     SIRS(
@@ -13,14 +28,17 @@ n_states(X::SIRS) = 3
         NV::Int,
         T::Int)
 
-Defines the SIS infection model.
+Defines the SIRS infection model.
 
 # Arguments
-* `εᵢᵗ`: Self-infection probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
-* `rᵢᵗ`: Recovery probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
-* `σᵢᵗ`: Loss of immunity probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
-* `NV`: Number of nodes of the contact graph.
-* `T`: Number of time-steps.
+- `εᵢᵗ`: Self-infection probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
+- `rᵢᵗ`: Recovery probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
+- `σᵢᵗ`: Loss of immunity probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
+- `NV`: Number of nodes of the contact graph.
+- `T`: Number of time-steps.
+
+# Returns
+- An instance of the SIRS struct representing the SIRS infection model.
 """
 function SIRS(
     εᵢᵗ::Union{Float64,Array{Float64,2}},
@@ -40,6 +58,7 @@ function SIRS(
 
     return SIRS(εᵢᵗ, rᵢᵗ, σᵢᵗ)
 end
+
 
 function nodes_formatting(
     model::EpidemicModel{SIRS,TG}, 
@@ -128,12 +147,15 @@ end
         patient_zero::Union{Vector{Int},Nothing}=nothing,
         γ::Union{Float64,Nothing}=nothing) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
-Simulates the epidemic outbreak given a SIRS model. 
+Simulates an epidemic outbreak using the SIRS (Susceptible-Infectious-Recovered-Susceptible) model.
 
 # Arguments
-* `model`: The SIRS epidemic model.
-* `patient_zero`: Vector of patients zero. Default is "nothing", meaning that the patients zero are chosen at random with probability γ.
-* `γ`: Probability of being a patient zero. Default is "nothing", meaning that it is fixed to0 1/NV, where NV is the number of nodes of the contact graph.
+- `model`: The SIRS epidemic model, encapsulating information about the infection dynamics, contact graph, and other parameters.
+- `patient_zero`: (Optional) A vector specifying the indices of initial infected individuals. If not provided (default `nothing`), patient zero is selected randomly based on the probability `γ`.
+- `γ`: (Optional) The probability of being a patient zero. If `patient_zero` is not specified and `γ` is provided, patient zero is chosen randomly with probability `γ`. If both `patient_zero` and `γ` are not provided (default `nothing`), patient zero is selected randomly with equal probability for each individual.
+
+# Returns
+- A matrix representing the epidemic outbreak configuration over time. Each row corresponds to a node, and each column represents a time step. The values in the matrix indicate the state of each node at each time step: 0.0 for Susceptible (S), 1.0 for Infected (I), and 2.0 for Recovered (R).
 """
 function sim_epidemics(
     model::EpidemicModel{SIRS,TG};
@@ -185,4 +207,4 @@ function sim_epidemics(
     end
     return config
 end
-        
+  

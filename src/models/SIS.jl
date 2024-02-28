@@ -1,8 +1,21 @@
+"""
+    struct SIS <: InfectionModel
+        εᵢᵗ::Array{Float64, 2} # Autoinfection probabilities
+        rᵢᵗ::Array{Float64, 2} # Recovery probabilities
+    end
+
+The `SIS` struct represents the SIS (Susceptible-Infected-Susceptible) infection model.
+
+# Fields
+- `εᵢᵗ`: An NVxT array representing the self-infection probabilities over time, where NV is the number of nodes and T is the number of time-steps. Each element εᵢᵗ[i, t] denotes the probability of node i infecting itself at time t.
+- `rᵢᵗ`: An NVxT array representing the recovery probabilities over time, where NV is the number of nodes and T is the number of time-steps. Each element rᵢᵗ[i, t] denotes the probability of node i recovering from infection at time t.
+
+"""
+
 struct SIS <: InfectionModel
-    εᵢᵗ::Array{Float64,2} # autoinfection
-    rᵢᵗ::Array{Float64,2} # I->R
+    εᵢᵗ::Array{Float64, 2} # Autoinfection probabilities
+    rᵢᵗ::Array{Float64, 2} # Recovery probabilities
 end
-n_states(X::SIS) = 2
 
 """
     SIS(
@@ -14,10 +27,13 @@ n_states(X::SIS) = 2
 Defines the SIS infection model.
 
 # Arguments
-* `εᵢᵗ`: Self-infection probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
-* `rᵢᵗ`: Recovery probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
-* `NV`: Number of nodes of the contact graph.
-* `T`: Number of time-steps.
+- `εᵢᵗ`: Self-infection probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
+- `rᵢᵗ`: Recovery probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
+- `NV`: Number of nodes of the contact graph.
+- `T`: Number of time-steps.
+
+# Returns
+- An instance of the SIS struct representing the SIS infection model.
 """
 function SIS(
     εᵢᵗ::Union{Float64,Array{Float64,2}},
@@ -33,6 +49,7 @@ function SIS(
 
     return SIS(εᵢᵗ, rᵢᵗ)
 end
+
 
 function nodes_formatting(
     model::EpidemicModel{SIS,TG}, 
@@ -114,12 +131,15 @@ end
         patient_zero::Union{Vector{Int},Nothing}=nothing,
         γ::Union{Float64,Nothing}=nothing) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
-Simulates the epidemic outbreak given a SIS model. 
+Simulates an epidemic outbreak using the SIS (Susceptible-Infectious-Susceptible) model.
 
 # Arguments
-* `model`: The SIS epidemic model.
-* `patient_zero`: Vector of patients zero. Default is "nothing", meaning that the patients zero are chosen at random with probability γ.
-* `γ`: Probability of being a patient zero. Default is "nothing", meaning that it is fixed to0 1/NV, where NV is the number of nodes of the contact graph.
+- `model`: The SIS epidemic model, encapsulating information about the infection dynamics, contact graph, and other parameters.
+- `patient_zero`: (Optional) A vector specifying the indices of initial infected individuals. If not provided (default `nothing`), patient zero is selected randomly based on the probability `γ`.
+- `γ`: (Optional) The probability of being a patient zero. If `patient_zero` is not specified and `γ` is provided, patient zero is chosen randomly with probability `γ`. If both `patient_zero` and `γ` are not provided (default `nothing`), patient zero is selected randomly with equal probability for each individual.
+
+# Returns
+- A matrix representing the epidemic outbreak configuration over time. Each row corresponds to a node, and each column represents a time step. The values in the matrix indicate the state of each node at each time step: 0.0 for Susceptible (S) and 1.0 for Infected (I).
 """
 function sim_epidemics(
     model::EpidemicModel{SIS,TG};
@@ -129,21 +149,20 @@ function sim_epidemics(
     inf₀ = false
     if patient_zero === nothing && γ !== nothing
         while !inf₀
-            patient_zero = rand(Binomial(1,γ), model.N)
-            patient_zero = findall(x->x==1, patient_zero)
+            patient_zero = rand(Binomial(1, γ), model.N)
+            patient_zero = findall(x -> x == 1, patient_zero)
             inf₀ = !isempty(patient_zero)
         end
     elseif patient_zero === nothing && γ === nothing
         while !inf₀
-            patient_zero = rand(Binomial(1,1/model.N), model.N)
-            patient_zero = findall(x->x==1, patient_zero)
+            patient_zero = rand(Binomial(1, 1 / model.N), model.N)
+            patient_zero = findall(x -> x == 1, patient_zero)
             inf₀ = !isempty(patient_zero)
         end
     end
 
     config = zeros(model.N, model.T + 1)
-
-    config[patient_zero,1] .+= 1.0
+    config[patient_zero, 1] .+= 1.0
 
     hs = zeros(model.N)
     for t in 1:model.T

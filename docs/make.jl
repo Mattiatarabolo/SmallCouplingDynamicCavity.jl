@@ -1,4 +1,4 @@
-using Documenter
+using Documenter, DocStringExtensions
 using SmallCouplingDynamicCavity
 
 push!(LOAD_PATH,"../src/")

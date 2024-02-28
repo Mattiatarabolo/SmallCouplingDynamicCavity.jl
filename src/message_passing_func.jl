@@ -243,17 +243,22 @@ end
         μ_cutoff::Float64 = -Inf,
         callback::Function=(x...) -> nothing) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
-Runs the SCDC inference.
+Runs the Small Coupling Dynamic Cavity (SCDC) inference algorithm.
+
+This function performs SCDC inference on the specified epidemic model, using the provided evidence (likelihood) probability function, and other parameters such as the probability of being a patient zero, maximum number of iterations, convergence threshold, damping factor, etc. It iteratively updates cavity messages until convergence or until the maximum number of iterations is reached.
 
 # Arguments
-* `model`: Epidemic model.
-* `obsprob`: Evidence (likelihood) probability p(O|x) of an obseravtion O given the planted state x.
-* `γ`: Probability of being a patient zero.
-* `maxiter`: Maximum number of iterations.
-* `epsconv`: Convergence threshold of the algorithm.
-* `damp`: Damping factor of the algorithm.
-* `μ_cutoff`: Lower cut-off for the values of μ.
-* `callback`: Callback function.
+- `model`: An [`EpidemicModel`](@ref) representing the epidemic model.
+- `obsprob`: A function representing the evidence (likelihood) probability p(O|x) of an observation O given the planted state x.
+- `γ`: The probability of being a patient zero.
+- `maxiter`: The maximum number of iterations.
+- `epsconv`: The convergence threshold of the algorithm.
+- `damp`: The damping factor of the algorithm.
+- `μ_cutoff`: Lower cut-off for the values of μ.
+- `callback`: A callback function to monitor the progress of the algorithm.
+
+# Returns
+- `nodes`: An array of [`Node`](@ref) objects representing the updated node states after inference.
 
 """
 function run_SCDC(
@@ -266,13 +271,15 @@ function run_SCDC(
     μ_cutoff::Float64 = -Inf,
     callback::Function=(x...) -> nothing) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
-    # set prior (given an expected mean number of source patients γ)
+    # Initialize prior probabilities based on the expected mean number of source patients (γ)
     prior = zeros(n_states(model.Disease), model.N)
     prior[1, :] .= (1 - γ) # x_i = S
     prior[2, :] .= γ # x_i = I
 
+    # Format nodes for inference
     nodes = nodes_formatting(model, obsprob)
 
+    # Initialize message objects
     Mⁱʲ = TransMat(model.T, model.Disease)
     ρⁱʲ = FBm(model.T, model.Disease)
     sumargexp = SumM(model.T)
@@ -282,19 +289,19 @@ function run_SCDC(
 
     ε = 0.0
 
+    # Iteratively update cavity messages until convergence or maximum iterations reached
     for iter = 1:maxiter
-        #update cavity messages and compute their convergence
         ε = update_cavities!(nodes, sumargexp, Mⁱʲ, ρⁱʲ, prior, model.T, updmess, newmess, newmarg, damp, μ_cutoff, model.Disease)
-
         callback(nodes, iter, ε)
 
-        #check convergence
+        # Check for convergence
         if ε < epsconv
             println("Converged after $iter iterations")
             break
         end
     end
 
+    # Update messages between nodes
     for inode in nodes
         sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
         for (jindex, j) in enumerate(inode.∂)
@@ -305,12 +312,12 @@ function run_SCDC(
         end
     end
 
-    # check unconvergence
+    # Check if convergence not achieved
     if ε > epsconv
         println("NOT converged after $maxiter iterations")
     end
-    
 
+    # Compute final marginal probabilities
     compute_marginals!(nodes, sumargexp, Mⁱʲ, ρⁱʲ, model.T, prior, updmess, newmarg, μ_cutoff, model.Disease)
 
     return nodes
