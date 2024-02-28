@@ -17,6 +17,8 @@ struct SIR <: InfectionModel
     rᵢᵗ::Array{Float64, 2} # Recovery probabilities
 end
 
+n_states(X::SIR) = 3
+
 """
     SIR(
         εᵢᵗ::Union{Float64,Array{Float64,2}},

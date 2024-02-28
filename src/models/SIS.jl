@@ -17,6 +17,8 @@ struct SIS <: InfectionModel
     rᵢᵗ::Array{Float64, 2} # Recovery probabilities
 end
 
+n_states(X::SIS) = 2
+
 """
     SIS(
         εᵢᵗ::Union{Float64,Array{Float64,2}},

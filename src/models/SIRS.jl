@@ -20,6 +20,8 @@ struct SIRS <: InfectionModel
     σᵢᵗ::Array{Float64, 2} # Loss of immunity probabilities
 end
 
+n_states(X::SIRS) = 3
+
 """
     SIRS(
         εᵢᵗ::Union{Float64,Array{Float64,2}},

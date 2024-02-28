@@ -439,7 +439,7 @@ version = "0.9.4"
 deps = ["Distributions", "DocStringExtensions", "Graphs", "SparseArrays", "StatsBase"]
 path = "/home/tara/julia_codes/SmallCouplingDynamicCavity"
 uuid = "1607259e-80f4-4675-b495-cb9c54bacb3f"
-version = "3.0.2"
+version = "3.0.3"
 
 [[deps.Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
