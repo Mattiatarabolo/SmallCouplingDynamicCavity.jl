@@ -15,11 +15,6 @@ end
 
 n_states(X::SI) = 2
 
-struct SI <: InfectionModel
-    εᵢᵗ::Array{Float64, 2} # autoinfection
-end
-n_states(X::SI) = 2
-
 """
     SI(
         εᵢᵗ::Union{Float64,Array{Float64,2}},
