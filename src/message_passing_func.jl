@@ -20,58 +20,14 @@ function update_single_message!(
     newmess.m .= exp.(updmess.lognumm[2, :] .- updmess.logZ)
     newmess.μ .= max.(updmess.signμ .* exp.(updmess.lognumμ .- updmess.logZ[1:end-1]), μ_cutoff)
 
-    #=  #DEBUGGING    
-    updmess.lognumm = ρ.fwm.*ρ.bwm
-    updmess.signμ = sign.(ρ.bwm[1,2:end]-ρ.bwm[2,2:end])
-    updmess.lognumμ = ρ.fwm[1,1:end-1].*M[1,1,:].*(ρ.bwm[1,2:end]-ρ.bwm[2,2:end])
-    updmess.logZ = dropdims(sum(ρ.fwm .* ρ.bwm, dims = 1), dims = 1)
-
-    newmess.m = updmess.lognumm[2,:]./updmess.logZ
-    newmess.μ = updmess.lognumμ./updmess.logZ[1:end-1] 
-    =#
-
     newmess.m .= jnode.cavities[iindex].m.*damp .+ newmess.m.*(1 - damp)
     newmess.μ .= jnode.cavities[iindex].μ.*damp .+ newmess.μ.*(1 - damp)
 
-    ε = max(normupdate(jnode.cavities[iindex].m, newmess.m), normupdate(jnode.cavities[iindex].μ, newmess.μ))
+    ε = normupdate(jnode.cavities[iindex].m, newmess.m)#, normupdate(jnode.cavities[iindex].μ, newmess.μ))
 
     if isnan(ε)
         throw(DomainError("NaN evaluated"))
-    end   
-    #= 
-    if isnan(ε)
-        #DEBUGGING       
-        println("cavity updated i = $(inode.i)-> j = $(jnode.i)")
-
-        for (kindex, k) in enumerate(inode.∂)
-            println("\nk = $(k) ∈ ∂i\\ j")
-            println("mₖᵢᵗ = $(inode.cavities[kindex].m)")
-            println("μₖᵢᵗ = $(inode.cavities[kindex].μ)")
-        end
-        println("\nsummᵢ = $(sumargexp.summ)")
-        println("sumμᵢ = $(sumargexp.sumμ)")
-        println("\nnewmᵢⱼ = $(newmess.m)")
-        println("newμᵢⱼ = $(newmess.μ)")
-        println("logZᵢⱼm = $(updmess.logZ)")
-        println("ρ₊ₜⁱʲ = $(ρ.fwm)")
-        println("ρₜ₋ⁱʲ = $(ρ.bwm)")
-        print("Mⁱʲ = ")
-        display(M)
-        for t in 1:T
-            print("ρ₊$(t-1)ⁱʲ")
-            display(ρ.fwm[:, t]')
-            display(M[:, :, t])
-        end
-        for t in 1:T
-            print("ρ₋$(T+2-t-1)ⁱʲ")
-            display(ρ.bwm[:, T+2-t])
-            display(M[:, :, T+1-t])
-        end
-
-        throw(DomainError("NaN evaluated"))
-    end
-
- =#    
+    end  
     jnode.cavities[iindex].m .= newmess.m
     jnode.cavities[iindex].μ .= newmess.μ 
 
@@ -254,8 +210,10 @@ This function performs SCDC inference on the specified epidemic model, using the
 - `maxiter`: The maximum number of iterations.
 - `epsconv`: The convergence threshold of the algorithm.
 - `damp`: The damping factor of the algorithm.
-- `μ_cutoff`: Lower cut-off for the values of μ.
-- `callback`: A callback function to monitor the progress of the algorithm.
+- `μ_cutoff`: (Optional) Lower cut-off for the values of μ.
+- `n_iter_nc`: (Optional) Number of iterations for non-converged messages. The messages are averaged over this number of iterations.
+- `damp_nc`: (Optional) Damping factor for non-converged messages.
+- `callback`: (Optional) A callback function to monitor the progress of the algorithm.
 
 # Returns
 - `nodes`: An array of [`Node`](@ref) objects representing the updated node states after inference.
@@ -269,6 +227,8 @@ function run_SCDC(
     epsconv::Float64,
     damp::Float64;
     μ_cutoff::Float64 = -Inf,
+    n_iter_nc::Int64 = 1,
+    damp_nc::Float64 = 0.0,
     callback::Function=(x...) -> nothing) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     # Initialize prior probabilities based on the expected mean number of source patients (γ)
@@ -301,6 +261,41 @@ function run_SCDC(
         end
     end
 
+    # Check if convergence not achieved
+    if ε > epsconv
+        println("NOT converged after $maxiter iterations")
+
+        for _ in 1:n_iter_nc
+            # compute average messages
+            for inode in nodes
+                sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
+                for (jindex, j) in enumerate(inode.∂)
+                    iindex = nodes[j].∂_idx[inode.i]
+                    M, ρ = compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, T, infectionmodel)
+                    clear!(updmess, newmess)
+                    updmess.lognumm .= log.(ρ.fwm) .+ log.(ρ.bwm)
+                    updmess.signμ .= sign.(ρ.bwm[1, 2:end] - ρ.bwm[2, 2:end])
+                    updmess.lognumμ .= log.(ρ.fwm[1, 1:end-1]) .+ log.(M[1, 1, :]) .+ log.(abs.(ρ.bwm[1, 2:end] - ρ.bwm[2, 2:end]))
+                    updmess.logZ .= log.(dropdims(sum(ρ.fwm .* ρ.bwm, dims=1), dims=1))
+
+                    newmess.m .= exp.(updmess.lognumm[2, :] .- updmess.logZ)
+                    newmess.μ .= max.(updmess.signμ .* exp.(updmess.lognumμ .- updmess.logZ[1:end-1]), μ_cutoff)
+
+                    nodes[j].cavities[iindex].m .+= nodes[j].cavities[iindex].m.*damp_nc .+ newmess.m.*(1 - damp_nc)
+                    nodes[j].cavities[iindex].μ .+= nodes[j].cavities[iindex].μ.*damp_nc .+ newmess.μ.*(1 - damp_nc)
+                end
+            end
+        end
+        
+        for inode in nodes
+            for (jindex, _) in enumerate(inode.∂)
+                inode.cavities[jindex].m ./= n_iter_nc
+                inode.cavities[jindex].μ ./= n_iter_nc
+            end
+        end
+    end
+    
+
     # Update messages between nodes
     for inode in nodes
         sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
@@ -310,11 +305,6 @@ function run_SCDC(
             nodes[j].ρs[iindex].fwm .= ρ.fwm
             nodes[j].ρs[iindex].bwm .= ρ.bwm
         end
-    end
-
-    # Check if convergence not achieved
-    if ε > epsconv
-        println("NOT converged after $maxiter iterations")
     end
 
     # Compute final marginal probabilities
