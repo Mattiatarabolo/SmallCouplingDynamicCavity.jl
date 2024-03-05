@@ -275,7 +275,6 @@ function run_SCDC(
         n_iter_nc = 100
         damp_nc = 0.1
         for iter in 1:n_iter_nc
-            println(iter)
             # compute average messages
             for inode in nodes
                 sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
@@ -296,6 +295,9 @@ function run_SCDC(
                     
                     avg_mess[j][iindex].m .+= newmess.m
                     avg_mess[j][iindex].μ .+= newmess.μ
+
+                    nodes[j].cavities[iindex].m .= newmess.m
+                    nodes[j].cavities[iindex].μ .= newmess.μ 
                 end
             end
         end
@@ -304,8 +306,8 @@ function run_SCDC(
             # compute average messages
             for iindex in 1:model.N
                 for (jindex, _) in enumerate(avg_mess[iindex])
-                    avg_mess[iindex][jindex].m ./= n_iter_nc
-                    avg_mess[iindex][jindex].μ ./= n_iter_nc
+                    nodes[j].cavities[iindex].m .= avg_mess[iindex][jindex].m ./ n_iter_nc
+                    nodes[j].cavities[iindex].μ .= avg_mess[iindex][jindex].μ ./ n_iter_nc
                 end
             end
         end
