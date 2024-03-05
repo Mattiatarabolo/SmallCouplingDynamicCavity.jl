@@ -23,11 +23,12 @@ function update_single_message!(
     newmess.m .= jnode.cavities[iindex].m.*damp .+ newmess.m.*(1 - damp)
     newmess.μ .= jnode.cavities[iindex].μ.*damp .+ newmess.μ.*(1 - damp)
 
+    if any(!isfinite, newmess.m) || any(!isfinite, newmess.μ)
+        throw(DomainError("NaN evaluated when updating message!"))
+    end
+
     ε = normupdate(jnode.cavities[iindex].m, newmess.m)#, normupdate(jnode.cavities[iindex].μ, newmess.μ))
 
-    if isnan(ε)
-        throw(DomainError("NaN evaluated"))
-    end  
     jnode.cavities[iindex].m .= newmess.m
     jnode.cavities[iindex].μ .= newmess.μ 
 
@@ -48,15 +49,19 @@ function compute_ρ!(
 
     clear!(M, ρ)
 
-    ρ.fwm[:, 1] .= ρ_norm(prior[:, inode.i])
-    ρ.bwm[:, T+1] .= ρ_norm(inode.obs[:, T+1])
+    ρ.fwm[:, 1] .= prior[:, inode.i]
+    ρ.bwm[:, T+1] .= inode.obs[:, T+1]
 
     fill_transmat_cav!(M, inode, iindex, jnode, jindex, sumargexp, infectionmodel)
 
     # fwd-bwd update
     for t in 1:T
-        ρ.fwm[:, t+1] .= ρ_norm(collect((ρ.fwm[:, t]' * M[:, :, t])'))
-        ρ.bwm[:, T+1-t] .= ρ_norm(M[:, :, T+1-t] * ρ.bwm[:, T+2-t])
+        ρ.fwm[:, t+1] .= (ρ.fwm[:, t]' * M[:, :, t])'
+        ρ.bwm[:, T+1-t] .= M[:, :, T+1-t] * ρ.bwm[:, T+2-t]
+    end
+
+    if any(!isfinite, ρ.fwm) || any(!isfinite, ρ.bwm)
+        throw(DomainError("NaN evaluated when computing ρ!"))
     end
 
     return M, ρ
@@ -79,15 +84,15 @@ function update_single_marginal!(
 
     clear!(M, ρ)
 
-    ρ.fwm[:, 1] .= ρ_norm(prior[:, inode.i])
-    ρ.bwm[:, T+1] .= ρ_norm(inode.obs[:, T+1])
+    ρ.fwm[:, 1] .= prior[:, inode.i]
+    ρ.bwm[:, T+1] .= inode.obs[:, T+1]
 
     fill_transmat_marg!(M, inode, sumargexp, infectionmodel)
 
     # fwd-bwd update
     for t in 1:T
-        ρ.fwm[:, t+1] .= ρ_norm(collect((ρ.fwm[:, t]' * M[:, :, t])'))
-        ρ.bwm[:, T+1-t] .= ρ_norm(M[:, :, T+1-t] * ρ.bwm[:, T+2-t])
+        ρ.fwm[:, t+1] .= (ρ.fwm[:, t]' * M[:, :, t])'
+        ρ.bwm[:, T+1-t] .= M[:, :, T+1-t] * ρ.bwm[:, T+2-t]
     end
 
     clear!(updmess, newmarg)

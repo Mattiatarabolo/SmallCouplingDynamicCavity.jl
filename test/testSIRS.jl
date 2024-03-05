@@ -70,7 +70,7 @@ end
 
 @testset "inferenceSIRS" begin
     Random.seed!(1)
-    nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff)
+    nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff=μ_cutoff, n_iter_nc=100, damp_nc=0.1)
 
     marg = zeros(NV,3,T+1)
     for (i,node) in enumerate(nodes)
