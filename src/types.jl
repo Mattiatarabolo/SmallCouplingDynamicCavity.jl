@@ -68,7 +68,7 @@ struct Message
         i::Int, 
         j::Int, 
         T::Int;
-        zeros::Bool = false)
+        zeros=false)
         if zeros
             new(i, j, zeros(T + 1), zeros(T))
         else
