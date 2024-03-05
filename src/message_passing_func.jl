@@ -240,8 +240,8 @@ function run_SCDC(
     nodes = nodes_formatting(model, obsprob)
 
     # Initialize message objects
-    Mⁱʲ = TransMat(model.T, model.Disease)
-    ρⁱʲ = FBm(model.T, model.Disease)
+    M = TransMat(model.T, model.Disease)
+    ρ = FBm(model.T, model.Disease)
     sumargexp = SumM(model.T)
     updmess = Updmess(model.T, model.Disease)
     newmess = Message(0, 0, model.T)
@@ -251,7 +251,7 @@ function run_SCDC(
 
     # Iteratively update cavity messages until convergence or maximum iterations reached
     for iter = 1:maxiter
-        ε = update_cavities!(nodes, sumargexp, Mⁱʲ, ρⁱʲ, prior, model.T, updmess, newmess, newmarg, damp, μ_cutoff, model.Disease)
+        ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, updmess, newmess, newmarg, damp, μ_cutoff, model.Disease)
         callback(nodes, iter, ε)
 
         # Check for convergence
