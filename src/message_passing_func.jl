@@ -301,14 +301,14 @@ function run_SCDC(
         sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
         for (jindex, j) in enumerate(inode.∂)
             iindex = nodes[j].∂_idx[inode.i]
-            _, ρ = compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, Mⁱʲ, ρⁱʲ, prior, model.T, model.Disease)
+            _, ρ = compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model.T, model.Disease)
             nodes[j].ρs[iindex].fwm .= ρ.fwm
             nodes[j].ρs[iindex].bwm .= ρ.bwm
         end
     end
 
     # Compute final marginal probabilities
-    compute_marginals!(nodes, sumargexp, Mⁱʲ, ρⁱʲ, model.T, prior, updmess, newmarg, μ_cutoff, model.Disease)
+    compute_marginals!(nodes, sumargexp, M, ρ, model.T, prior, updmess, newmarg, μ_cutoff, model.Disease)
 
     return nodes
 end
