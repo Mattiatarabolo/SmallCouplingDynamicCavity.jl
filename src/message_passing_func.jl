@@ -271,7 +271,7 @@ function run_SCDC(
                 sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
                 for (jindex, j) in enumerate(inode.∂)
                     iindex = nodes[j].∂_idx[inode.i]
-                    M, ρ = compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, T, infectionmodel)
+                    M, ρ = compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model.T, model.Disease)
                     clear!(updmess, newmess)
                     updmess.lognumm .= log.(ρ.fwm) .+ log.(ρ.bwm)
                     updmess.signμ .= sign.(ρ.bwm[1, 2:end] - ρ.bwm[2, 2:end])
