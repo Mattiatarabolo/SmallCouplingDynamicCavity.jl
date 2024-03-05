@@ -270,7 +270,7 @@ function run_SCDC(
     if ε > epsconv
         println("NOT converged after $maxiter iterations")
 
-        avg_mess = [[SmallCouplingDynamicCavity.Message(node.i, j, model.T; zeros=true) for j in node.∂] for node in nodes]
+        avg_mess = [[Message(node.i, j, model.T; zero_mess=true) for j in node.∂] for node in nodes]
 
         n_iter_nc = 100
         damp_nc = 0.1
@@ -278,11 +278,11 @@ function run_SCDC(
             println(iter)
             # compute average messages
             for inode in nodes
-                sumargexp = SmallCouplingDynamicCavity.compute_sumargexp!(inode, nodes, sumargexp)
+                sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
                 for (jindex, j) in enumerate(inode.∂)
                     iindex = nodes[j].∂_idx[inode.i]
-                    M, ρ = SmallCouplingDynamicCavity.compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model.T, model.Disease)
-                    SmallCouplingDynamicCavity.clear!(updmess, newmess)
+                    M, ρ = compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model.T, model.Disease)
+                    clear!(updmess, newmess)
                     updmess.lognumm .= log.(ρ.fwm) .+ log.(ρ.bwm)
                     updmess.signμ .= sign.(ρ.bwm[1, 2:end] - ρ.bwm[2, 2:end])
                     updmess.lognumμ .= log.(ρ.fwm[1, 1:end-1]) .+ log.(M[1, 1, :]) .+ log.(abs.(ρ.bwm[1, 2:end] - ρ.bwm[2, 2:end]))
