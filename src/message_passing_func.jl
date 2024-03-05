@@ -292,10 +292,13 @@ function run_SCDC(
             end
         end
         
-        for inode in nodes
-            for (jindex, _) in enumerate(inode.∂)
-                inode.cavities[jindex].m ./= n_iter_nc
-                inode.cavities[jindex].μ ./= n_iter_nc
+        if n_iter_nc != 0
+            # compute average messages
+            for inode in nodes
+                for (jindex, _) in enumerate(inode.∂)
+                    inode.cavities[jindex].m ./= n_iter_nc
+                    inode.cavities[jindex].μ ./= n_iter_nc
+                end
             end
         end
     end
