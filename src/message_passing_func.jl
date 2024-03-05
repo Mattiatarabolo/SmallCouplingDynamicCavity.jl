@@ -270,14 +270,19 @@ function run_SCDC(
     if ε > epsconv
         println("NOT converged after $maxiter iterations")
 
-        for _ in 1:n_iter_nc
+        avg_mess = [[SmallCouplingDynamicCavity.Message(node.i, j, zeros(T+1), zeros(T)) for j in node.∂] for node in nodes]
+
+        n_iter_nc = 100
+        damp_nc = 0.1
+        for iter in 1:n_iter_nc
+            println(iter)
             # compute average messages
             for inode in nodes
-                sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
+                sumargexp = SmallCouplingDynamicCavity.compute_sumargexp!(inode, nodes, sumargexp)
                 for (jindex, j) in enumerate(inode.∂)
                     iindex = nodes[j].∂_idx[inode.i]
-                    M, ρ = compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model.T, model.Disease)
-                    clear!(updmess, newmess)
+                    M, ρ = SmallCouplingDynamicCavity.compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model.T, model.Disease)
+                    SmallCouplingDynamicCavity.clear!(updmess, newmess)
                     updmess.lognumm .= log.(ρ.fwm) .+ log.(ρ.bwm)
                     updmess.signμ .= sign.(ρ.bwm[1, 2:end] - ρ.bwm[2, 2:end])
                     updmess.lognumμ .= log.(ρ.fwm[1, 1:end-1]) .+ log.(M[1, 1, :]) .+ log.(abs.(ρ.bwm[1, 2:end] - ρ.bwm[2, 2:end]))
@@ -286,18 +291,21 @@ function run_SCDC(
                     newmess.m .= exp.(updmess.lognumm[2, :] .- updmess.logZ)
                     newmess.μ .= max.(updmess.signμ .* exp.(updmess.lognumμ .- updmess.logZ[1:end-1]), μ_cutoff)
 
-                    nodes[j].cavities[iindex].m .+= nodes[j].cavities[iindex].m.*damp_nc .+ newmess.m.*(1 - damp_nc)
-                    nodes[j].cavities[iindex].μ .+= nodes[j].cavities[iindex].μ.*damp_nc .+ newmess.μ.*(1 - damp_nc)
+                    newmess.m .= nodes[j].cavities[iindex].m.*damp_nc .+ newmess.m.*(1 - damp_nc)
+                    newmess.μ .= nodes[j].cavities[iindex].μ.*damp_nc .+ newmess.μ.*(1 - damp_nc)
+                    
+                    avg_mess[j][iindex].m .+= newmess.m
+                    avg_mess[j][iindex].μ .+= newmess.μ
                 end
             end
         end
         
         if n_iter_nc != 0
             # compute average messages
-            for inode in nodes
-                for (jindex, _) in enumerate(inode.∂)
-                    inode.cavities[jindex].m ./= n_iter_nc
-                    inode.cavities[jindex].μ ./= n_iter_nc
+            for iindex in 1:model.N
+                for (jindex, _) in enumerate(avg_mess[iindex])
+                    avg_mess[iindex][jindex].m ./= n_iter_nc
+                    avg_mess[iindex][jindex].μ ./= n_iter_nc
                 end
             end
         end
