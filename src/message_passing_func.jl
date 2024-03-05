@@ -304,10 +304,11 @@ function run_SCDC(
         
         if n_iter_nc != 0
             # compute average messages
-            for iindex in 1:model.N
-                for (jindex, _) in enumerate(avg_mess[iindex])
-                    nodes[j].cavities[iindex].m .= avg_mess[iindex][jindex].m ./ n_iter_nc
-                    nodes[j].cavities[iindex].μ .= avg_mess[iindex][jindex].μ ./ n_iter_nc
+            for inode in nodes
+                for (_, j) in enumerate(inode.∂)
+                    iindex = nodes[j].∂_idx[inode.i]
+                    nodes[j].cavities[iindex].m .= avg_mess[j][iindex].m ./ n_iter_nc
+                    nodes[j].cavities[iindex].μ .= avg_mess[j][iindex].μ ./ n_iter_nc
                 end
             end
         end
