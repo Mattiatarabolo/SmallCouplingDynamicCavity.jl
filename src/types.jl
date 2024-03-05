@@ -67,8 +67,13 @@ struct Message
     function Message(
         i::Int, 
         j::Int, 
-        T::Int)
-        new(i, j, ones(T + 1) ./ (T + 1), zeros(T))
+        T::Int;
+        zeros::Bool = false)
+        if zeros
+            new(i, j, zeros(T + 1), zeros(T))
+        else
+            new(i, j, ones(T + 1) ./ (T + 1), zeros(T))
+        end
     end
 end
 

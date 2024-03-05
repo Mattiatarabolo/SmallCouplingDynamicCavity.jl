@@ -270,7 +270,7 @@ function run_SCDC(
     if ε > epsconv
         println("NOT converged after $maxiter iterations")
 
-        avg_mess = [[SmallCouplingDynamicCavity.Message(node.i, j, zeros(model.T+1), zeros(model.T)) for j in node.∂] for node in nodes]
+        avg_mess = [[SmallCouplingDynamicCavity.Message(node.i, j, model.T; zeros=true) for j in node.∂] for node in nodes]
 
         n_iter_nc = 100
         damp_nc = 0.1
