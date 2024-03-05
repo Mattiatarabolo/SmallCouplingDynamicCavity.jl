@@ -68,8 +68,8 @@ struct Message
         i::Int, 
         j::Int, 
         T::Int;
-        zeros=false)
-        if zeros
+        zero_mess=false)
+        if zero_mess
             new(i, j, zeros(T + 1), zeros(T))
         else
             new(i, j, ones(T + 1) ./ (T + 1), zeros(T))
