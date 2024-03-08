@@ -11,36 +11,36 @@ The `SI` struct represents the SI (Susceptible-Infected) infection model.
 """
 struct SI <: InfectionModel
     εᵢᵗ::Array{Float64, 2} # Autoinfection probabilities
+
+    """
+        SI(
+            εᵢᵗ::Union{Float64,Array{Float64,2}},
+            NV::Int,
+            T::Int)
+
+    Defines the SI infection model.
+
+    # Arguments
+    - `εᵢᵗ`: Self-infection probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
+    - `NV`: Number of nodes of the contact graph.
+    - `T`: Number of time-steps.
+
+    # Returns
+    - An instance of the SI struct representing the SI infection model.
+    """
+    function SI(
+        εᵢᵗ::Union{Float64, Array{Float64, 2}},
+        NV::Int,
+        T::Int)
+        if typeof(εᵢᵗ) == Float64
+            εᵢᵗ = ones(NV, T) .* εᵢᵗ
+        end
+
+        new(εᵢᵗ)
+    end
 end
 
 n_states(X::SI) = 2
-
-"""
-    SI(
-        εᵢᵗ::Union{Float64,Array{Float64,2}},
-        NV::Int,
-        T::Int)
-
-Defines the SI infection model.
-
-# Arguments
-- `εᵢᵗ`: Self-infection probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
-- `NV`: Number of nodes of the contact graph.
-- `T`: Number of time-steps.
-
-# Returns
-- An instance of the SI struct representing the SI infection model.
-"""
-function SI(
-    εᵢᵗ::Union{Float64, Array{Float64, 2}},
-    NV::Int,
-    T::Int)
-    if typeof(εᵢᵗ) == Float64
-        εᵢᵗ = ones(NV, T) .* εᵢᵗ
-    end
-
-    return SI(εᵢᵗ)
-end
 
 
 function nodes_formatting(

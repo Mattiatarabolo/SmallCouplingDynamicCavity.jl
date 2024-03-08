@@ -13,53 +13,52 @@ The `SIRS` struct represents the SIRS (Susceptible-Infected-Recovered-Susceptibl
 - `σᵢᵗ`: An NVxT array representing the loss of immunity probabilities over time, where NV is the number of nodes and T is the number of time-steps. Each element σᵢᵗ[i, t] denotes the probability of node i losing immunity and becoming susceptible again at time t.
 
 """
-
 struct SIRS <: InfectionModel
     εᵢᵗ::Array{Float64, 2} # Autoinfection probabilities
     rᵢᵗ::Array{Float64, 2} # Recovery probabilities
     σᵢᵗ::Array{Float64, 2} # Loss of immunity probabilities
-end
 
-n_states(X::SIRS) = 3
+    """
+        SIRS(
+            εᵢᵗ::Union{Float64,Array{Float64,2}},
+            rᵢᵗ::Union{Float64,Array{Float64,2}},
+            σᵢᵗ::Union{Float64,Array{Float64,2}},
+            NV::Int,
+            T::Int)
 
-"""
-    SIRS(
+    Defines the SIRS infection model.
+
+    # Arguments
+    - `εᵢᵗ`: Self-infection probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
+    - `rᵢᵗ`: Recovery probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
+    - `σᵢᵗ`: Loss of immunity probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
+    - `NV`: Number of nodes of the contact graph.
+    - `T`: Number of time-steps.
+
+    # Returns
+    - An instance of the SIRS struct representing the SIRS infection model.
+    """
+    function SIRS(
         εᵢᵗ::Union{Float64,Array{Float64,2}},
         rᵢᵗ::Union{Float64,Array{Float64,2}},
         σᵢᵗ::Union{Float64,Array{Float64,2}},
         NV::Int,
         T::Int)
+        if typeof(εᵢᵗ) == Float64
+            εᵢᵗ = ones(NV, T) .* εᵢᵗ
+        end
+        if typeof(rᵢᵗ) == Float64
+            rᵢᵗ = ones(NV, T) .* rᵢᵗ
+        end
+        if typeof(σᵢᵗ) == Float64
+            σᵢᵗ = ones(NV, T) .* σᵢᵗ
+        end
 
-Defines the SIRS infection model.
-
-# Arguments
-- `εᵢᵗ`: Self-infection probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
-- `rᵢᵗ`: Recovery probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
-- `σᵢᵗ`: Loss of immunity probability. Can be either a Float64 (constant over all nodes and times) or a NVxT matrix.
-- `NV`: Number of nodes of the contact graph.
-- `T`: Number of time-steps.
-
-# Returns
-- An instance of the SIRS struct representing the SIRS infection model.
-"""
-function SIRS(
-    εᵢᵗ::Union{Float64,Array{Float64,2}},
-    rᵢᵗ::Union{Float64,Array{Float64,2}},
-    σᵢᵗ::Union{Float64,Array{Float64,2}},
-    NV::Int,
-    T::Int)
-    if typeof(εᵢᵗ) == Float64
-        εᵢᵗ = ones(NV, T) .* εᵢᵗ
+        new(εᵢᵗ, rᵢᵗ, σᵢᵗ)
     end
-    if typeof(rᵢᵗ) == Float64
-        rᵢᵗ = ones(NV, T) .* rᵢᵗ
-    end
-    if typeof(σᵢᵗ) == Float64
-        σᵢᵗ = ones(NV, T) .* σᵢᵗ
-    end
-
-    return SIRS(εᵢᵗ, rᵢᵗ, σᵢᵗ)
 end
+
+n_states(X::SIRS) = 3
 
 
 function nodes_formatting(
