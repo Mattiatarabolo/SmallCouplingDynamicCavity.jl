@@ -272,8 +272,6 @@ function run_SCDC(
 
         avg_mess = [[Message(node.i, j, model.T; zero_mess=true) for j in node.∂] for node in nodes]
 
-        n_iter_nc = 100
-        damp_nc = 0.1
         for iter in 1:n_iter_nc
             # compute average messages
             for inode in nodes
