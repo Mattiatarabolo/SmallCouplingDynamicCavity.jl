@@ -8,7 +8,7 @@ $(EXPORTS)
 """
 module SmallCouplingDynamicCavity
 
-using Graphs, Distributions, DocStringExtensions
+using Graphs, Distributions, DocStringExtensions, Random
 
 export sim_epidemics, run_SCDC, ROC_curve, bethe_lattice, SI, SIR, SIS, SIRS, EpidemicModel
 

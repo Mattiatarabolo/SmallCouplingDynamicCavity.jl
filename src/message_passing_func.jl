@@ -168,7 +168,7 @@ function update_cavities!(
 
     ε = 0.0
 
-    for inode in nodes
+    for inode in shuffle(nodes)
         ε = max(ε, update_node!(inode, nodes, sumargexp, M, ρ, prior, T, updmess, newmess, newmarg, damp, μ_cutoff, infectionmodel))
     end
 
