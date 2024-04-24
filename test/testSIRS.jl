@@ -23,16 +23,16 @@ end
 infectionmodel = SIRS(0.0, r₀, σ₀, NV, T)
 model = EpidemicModel(infectionmodel, G, T, log.(1 .- λ))
 
-configtest=[1.0  1.0  1.0  1.0  2.0  0.0;
-    0.0  0.0  1.0  1.0  1.0  1.0;
-    0.0  0.0  0.0  0.0  1.0  1.0;
-    0.0  0.0  0.0  1.0  1.0  1.0;
-    0.0  0.0  1.0  2.0  2.0  2.0;
-    0.0  0.0  0.0  0.0  0.0  0.0;
-    0.0  0.0  0.0  1.0  1.0  1.0;
-    0.0  0.0  0.0  0.0  0.0  1.0;
-    0.0  0.0  0.0  0.0  1.0  1.0;
-    0.0  1.0  1.0  1.0  2.0  0.0]
+configtest=[1 1 1 1 2 0; 
+            0 0 1 1 1 1; 
+            0 0 0 0 1 1; 
+            0 0 0 1 1 1; 
+            0 0 1 2 2 2; 
+            0 0 0 0 0 0; 
+            0 0 0 1 1 1; 
+            0 0 0 0 0 1; 
+            0 0 0 0 1 1; 
+            0 1 1 1 2 0]
 
     # generate observations at the last time
 # define the observation probability

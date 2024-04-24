@@ -125,14 +125,14 @@ struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:Abstr
     """Infection couplings. It is a NVxNVx(T+1) Array where νᵗᵢⱼ=log(1-λᵗᵢⱼ), with λᵗᵢⱼ being the infection probability from individual i to individual j at time t."""
     ν::Array{Float64, 3}
     """Observations matrix. It is a NVx(T+1) Matrix, where obsᵗᵢ is the observation of individual i at time t: it is equal to -1.0 if not observed, 0.0 if S, 1.0 if I, 2.0 if R (only for SIR and SIRS)."""
-    obsmat::Matrix{Float64}
+    obsmat::Matrix{Int8}
 
     @doc """
         EpidemicModel(
             infectionmodel::TI, 
             G::TG, T::Int, 
             ν::Array{Float64, 3}, 
-            obs::Matrix{Float64}) where {TI<:InfectionModel,TG<:AbstractGraph}
+            obs::Matrix{Int8}) where {TI<:InfectionModel,TG<:AbstractGraph}
 
     Defines the epidemic model.
 
@@ -152,7 +152,7 @@ struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:Abstr
         infectionmodel::TI, 
         G::TG, T::Int, 
         ν::Array{Float64, 3}, 
-        obs::Matrix{Float64}) where {TI<:InfectionModel,TG<:AbstractGraph}
+        obs::Matrix{Int8}) where {TI<:InfectionModel,TG<:AbstractGraph}
         new{TI,TG}(infectionmodel, G, nv(G), T, ν, obs)
     end
 
@@ -161,7 +161,7 @@ struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:Abstr
             infectionmodel::TI, 
             G::TG, T::Int, 
             ν::Array{Float64, 3}, 
-            obs::Matrix{Float64}) where {TI<:InfectionModel,TG<:Vector{<:AbstractGraph}}
+            obs::Matrix{Int8}) where {TI<:InfectionModel,TG<:Vector{<:AbstractGraph}}
 
     Defines the epidemic model.
 
@@ -172,7 +172,7 @@ struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:Abstr
         - `G`: The contact graph. It should be a T+1 vector of AbstractGraph representing the time-varying contact graph.
         - `T`: The number of time-steps.
         - `ν`: The infection couplings. It should be a 3-dimensional array of size NVxNVx(T+1), where νᵗᵢⱼ=log(1-λᵗᵢⱼ), with λᵗᵢⱼ being the infection probability from individual i to individual j at time t.
-        - `obs`: The observations matrix. It should be a NVx(T+1) matrix, where obsᵗᵢ is the observation of individual i at time t: it is equal to -1.0 if not observed, 0.0 if S, 1.0 if I, 2.0 if R (only for SIR and SIRS).
+        - `obs`: The observations obsmatrix. It should be a NVx(T+1) matrix, where obsᵗᵢ is the observation of individual i at time t: it is equal to -1.0 if not observed, 0.0 if S, 1.0 if I, 2.0 if R (only for SIR and SIRS).
     
         # Returns
         - `EpidemicModel`: An [`EpidemicModel`](@ref) object representing the defined epidemic model.
@@ -181,7 +181,7 @@ struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:Abstr
         infectionmodel::TI, 
         G::TG, T::Int, 
         ν::Array{Float64, 3}, 
-        obs::Matrix{Float64}) where {TI<:InfectionModel,TG<:Vector{<:AbstractGraph}}
+        obs::Matrix{Int8}) where {TI<:InfectionModel,TG<:Vector{<:AbstractGraph}}
         new{TI,TG}(infectionmodel, G, nv(G[1]), T, ν, obs)
     end
 
@@ -267,8 +267,8 @@ struct Node{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}
     ρs::Vector{FBm}
     """Infection couplings of the neighbours against the node."""
     νs::Vector{Vector{Float64}}
-    """Observations matrix."""
-    obs::Array{Float64,2}
+    """Observation probability matrix."""
+    obs::Matrix{Float64}
     """Epidemic model. It is a [`EpidemicModel`](@ref) type."""
     model::EpidemicModel{TI,TG}
 
@@ -277,7 +277,7 @@ struct Node{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}
         ∂::Vector{Int}, 
         T::Int, 
         νs::Vector{Vector{Float64}}, 
-        obs::Array{Float64,2},
+        obs::Matrix{Float64},
         model::EpidemicModel{TI,TG}) where {TI <:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
         new{TI,TG}(

@@ -62,9 +62,9 @@ function nodes_formatting(
 
     for i in 1:model.N
         obs = ones(3, model.T + 1)
-        obs[1, :] = [obsprob(Ob, 0.0) for Ob in model.obsmat[i, :]]
-        obs[2, :] = [obsprob(Ob, 1.0) for Ob in model.obsmat[i, :]]
-        obs[3, :] = [obsprob(Ob, 2.0) for Ob in model.obsmat[i, :]]
+        obs[1, :] = [obsprob(Ob, 0) for Ob in model.obsmat[i, :]]
+        obs[2, :] = [obsprob(Ob, 1) for Ob in model.obsmat[i, :]]
+        obs[3, :] = [obsprob(Ob, 2) for Ob in model.obsmat[i, :]]
 
         ∂ = neighbors(model.G, i)
 
@@ -85,9 +85,9 @@ function nodes_formatting(
 
     for i in 1:model.N
         obs = ones(3, model.T + 1)
-        obs[1, :] = [obsprob(Ob, 0.0) for Ob in model.obsmat[i, :]]
-        obs[2, :] = [obsprob(Ob, 1.0) for Ob in model.obsmat[i, :]]
-        obs[3, :] = [obsprob(Ob, 2.0) for Ob in model.obsmat[i, :]]
+        obs[1, :] = [obsprob(Ob, 0) for Ob in model.obsmat[i, :]]
+        obs[2, :] = [obsprob(Ob, 1) for Ob in model.obsmat[i, :]]
+        obs[3, :] = [obsprob(Ob, 2) for Ob in model.obsmat[i, :]]
 
         ∂ = Vector{Int}()
 
@@ -169,31 +169,31 @@ function sim_epidemics(
         end
     end
 
-    config = zeros(model.N, model.T + 1)
+    config = zeros(Int8, model.N, model.T + 1)
 
-    config[patient_zero,1] .+= 1.0
+    config[patient_zero,1] .+= 1
 
-    function W_SIR(x::Float64, y::Float64, h::Float64, r::Float64)
-        if x == 0.0
-            return (y == 0.0) * exp(h)
-        elseif x == 1.0
-            return (y == 0.0) * (1 - exp(h)) + (y == 1.0) * (1 - r)
-        elseif x == 2.0
-            return (y == 1.0) * r + (y == 2.0)
+    function W_SIR(x, y, h::Float64, r::Float64)
+        if x == 0
+            return (y == 0) * exp(h)
+        elseif x == 1
+            return (y == 0) * (1 - exp(h)) + (y == 1) * (1 - r)
+        elseif x == 2
+            return (y == 1) * r + (y == 2)
         else
             throw(ArgumentError("Invalid value for y"))
         end
     end
     hs = zeros(model.N)
     for t in 1:model.T
-        hs = [Float64(x == 1.0) for x in config[:, t]]' * model.ν[:, :, t]
+        hs = [Float64(x == 1) for x in config[:, t]]' * model.ν[:, :, t]
         config[:, t+1] = [
-            if (u <= W_SIR(0.0, x, h, r))
-                0.0
-            elseif (W_SIR(0.0, x, h, r) < u <= W_SIR(0.0, x, h, r) + W_SIR(1.0, x, h, r))
-                1.0
+            if (u <= W_SIR(0, x, h, r))
+                Int8(0)
+            elseif (W_SIR(0, x, h, r) < u <= W_SIR(0, x, h, r) + W_SIR(1, x, h, r))
+                Int8(1)
             else
-                2.0
+                Int8(2)
             end for (x, h, r, u) in zip(config[:, t], hs, model.Disease.rᵢᵗ[:, t], rand(Float64, model.N))
         ]
     end

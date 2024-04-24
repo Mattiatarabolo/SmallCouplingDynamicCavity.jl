@@ -51,8 +51,8 @@ function nodes_formatting(
 
     for i in 1:model.N
         obs = ones(2, model.T + 1)
-        obs[1, :] = [obsprob(Ob, 0.0) for Ob in model.obsmat[i, :]]
-        obs[2, :] = [obsprob(Ob, 1.0) for Ob in model.obsmat[i, :]]
+        obs[1, :] = [obsprob(Ob, 0) for Ob in model.obsmat[i, :]]
+        obs[2, :] = [obsprob(Ob, 1) for Ob in model.obsmat[i, :]]
 
         ∂ = neighbors(model.G, i)
 
@@ -72,8 +72,8 @@ function nodes_formatting(
 
     for i in 1:model.N
         obs = ones(2, model.T + 1)
-        obs[1, :] = [obsprob(Ob, 0.0) for Ob in model.obsmat[i, :]]
-        obs[2, :] = [obsprob(Ob, 1.0) for Ob in model.obsmat[i, :]]
+        obs[1, :] = [obsprob(Ob, 0) for Ob in model.obsmat[i, :]]
+        obs[2, :] = [obsprob(Ob, 1) for Ob in model.obsmat[i, :]]
 
         ∂ = Vector{Int}()
 
@@ -151,9 +151,9 @@ function sim_epidemics(
         end
     end
 
-    config = zeros(model.N, model.T + 1)
+    config = zeros(Int8, model.N, model.T + 1)
 
-    config[patient_zero, 1] .+= 1.0
+    config[patient_zero, 1] .+= 1
 
     hs = zeros(model.N)
     for t in 1:model.T
