@@ -54,21 +54,21 @@ julia> model = EpidemicModel(infection_model, G, 5, log.(1 .- λ))
     ```julia-repl
     # Sample the epidemic cascade specifying the patient zero as individual 1
     julia> config = sim_epidemics(model, patient_zero=[1])
-    4×6 Matrix{Float64}:
-    1.0  1.0  1.0  1.0  1.0  1.0
-    0.0  1.0  1.0  1.0  1.0  1.0
-    0.0  1.0  1.0  1.0  1.0  1.0
-    0.0  0.0  0.0  1.0  1.0  1.0
+    4×6 Matrix{Int8}:
+    1  1  1  1  1  1
+    0  1  1  1  1  1
+    0  1  1  1  1  1
+    0  0  0  1  1  1
     ```
 - ### Inference
     ```julia-repl
-    # Insert the observations as a matrix (-1.0 = unobserved, 0.0 = observed S, 1.0 = observed I)
-    julia> model.obsmat .= [-1.0 -1.0 1.0 -1.0 -1.0 -1.0; 0.0 -1.0 -1.0 -1.0 1.0 -1.0; -1.0 -1.0 -1.0 -1.0 -1.0 -1.0;  -1.0 -1.0 -1.0 -1.0 -1.0 1.0]
-    4×6 Matrix{Float64}:
-    -1.0  -1.0   1.0  -1.0  -1.0  -1.0
-     0.0  -1.0  -1.0  -1.0   1.0  -1.0
-    -1.0  -1.0  -1.0  -1.0  -1.0  -1.0
-    -1.0  -1.0  -1.0  -1.0  -1.0   1.0
+    # Insert the observations as a matrix (-1 = unobserved, 0 = observed S, 1 = observed I)
+    julia> model.obsmat .= [-1 -1 1 -1 -1 -1; 0 -1 -1 -1 1 -1; -1 -1 -1 -1 -1 -1;  -1 -1 -1 -1 -1 1]
+    4×6 Matrix{Int8}:
+    -1  -1   1  -1  -1  -1
+     0  -1  -1  -1   1  -1
+    -1  -1  -1  -1  -1  -1
+    -1  -1  -1  -1  -1   1
 
     # Run the inference algorithm with maximum 10 iterations, a convergence threshold of 0.1, and a damping factor of 0.0. The prior probability of being infected at time 0 is 1/4, and the observation probability obsprob is user-specified
     julia> nodes = run_SCDC(model, obsprob, 1/4, 10, 0.1, 0.0)
