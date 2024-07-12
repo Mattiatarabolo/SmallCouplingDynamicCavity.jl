@@ -25,7 +25,7 @@ struct SumM
     sumμ::Vector{Float64}
 
     function SumM(T::Int)
-        new(zeros(T + 1), zeros(T))
+        new(zeros(T), zeros(T))
     end
 end
 

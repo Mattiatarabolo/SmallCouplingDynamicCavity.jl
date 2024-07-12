@@ -12,10 +12,10 @@ T = 5 # total time
 r₀ = 0.3 # Recovery rate
 
 # constant infection probability
-λ = zeros(NV, NV, T+1)
+λ = zeros(NV, NV, T)
 for e in edges(G)
-    λ[src(e), dst(e), :] = ones(T+1) * λ₀
-    λ[dst(e), src(e), :] = ones(T+1) * λ₀
+    λ[src(e), dst(e), :] = ones(T) * λ₀
+    λ[dst(e), src(e), :] = ones(T) * λ₀
 end
 
 # define de epidemic model

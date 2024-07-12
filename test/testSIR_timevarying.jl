@@ -9,11 +9,11 @@ r₀ = 0.2 # Recovery rate
 σ₀ = 0.3 # Loss of immunity rate
 
 G = Vector{SimpleGraph{Int64}}()
-λ = zeros(NV, NV, T+1)
+λ = zeros(NV, NV, T)
 
 #genrate Erdos-Renyi random graphs with average connectivity k
 Random.seed!(1)
-for t in 1:T+1
+for t in 1:T
     g = erdos_renyi(NV, k/NV)
     push!(G,g)
     for e in edges(g)

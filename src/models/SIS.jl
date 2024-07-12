@@ -86,7 +86,7 @@ function nodes_formatting(
 
         ∂ = Vector{Int}()
 
-        for t in 1:model.T+1
+        for t in 1:model.T
             ∂ = union(∂, neighbors(model.G[t], i))
         end
 
@@ -108,10 +108,10 @@ function fill_transmat_cav!(
     sumargexp::SumM,
     infectionmodel::SIS) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
-    M[1, 1, :] .= (exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1])).*(1 .- infectionmodel.εᵢᵗ[inode.i, :]) .* inode.obs[1, 1:end-1]
-    M[1, 2, :] .= (1 .- exp.(sumargexp.summ[1:end-1] .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex][1:end-1]).*(1 .- infectionmodel.εᵢᵗ[inode.i, :])) .* inode.obs[1, 1:end-1]
-    M[2, 1, :] .= infectionmodel.rᵢᵗ[inode.i, :] .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex][1:end-1]) .* inode.obs[2, 1:end-1]
-    M[2, 2, :] .= (1 .- infectionmodel.rᵢᵗ[inode.i, :]) .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex][1:end-1]) .* inode.obs[2, 1:end-1]
+    M[1, 1, :] .= (exp.(sumargexp.summ .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex])).*(1 .- infectionmodel.εᵢᵗ[inode.i, :]) .* inode.obs[1, 1:end-1]
+    M[1, 2, :] .= (1 .- exp.(sumargexp.summ .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex]).*(1 .- infectionmodel.εᵢᵗ[inode.i, :])) .* inode.obs[1, 1:end-1]
+    M[2, 1, :] .= infectionmodel.rᵢᵗ[inode.i, :] .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex]) .* inode.obs[2, 1:end-1]
+    M[2, 2, :] .= (1 .- infectionmodel.rᵢᵗ[inode.i, :]) .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex]) .* inode.obs[2, 1:end-1]
 end
 
 function fill_transmat_marg!(
@@ -120,8 +120,8 @@ function fill_transmat_marg!(
     sumargexp::SumM,
     infectionmodel::SIS) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
-    M[1, 1, :] .= (exp.(sumargexp.summ[1:end-1])).*(1 .- infectionmodel.εᵢᵗ[inode.i, :]) .* inode.obs[1, 1:end-1]
-    M[1, 2, :] .= (1 .- exp.(sumargexp.summ[1:end-1]).*(1 .- infectionmodel.εᵢᵗ[inode.i, :])) .* inode.obs[1, 1:end-1]
+    M[1, 1, :] .= (exp.(sumargexp.summ)).*(1 .- infectionmodel.εᵢᵗ[inode.i, :]) .* inode.obs[1, 1:end-1]
+    M[1, 2, :] .= (1 .- exp.(sumargexp.summ).*(1 .- infectionmodel.εᵢᵗ[inode.i, :])) .* inode.obs[1, 1:end-1]
     M[2, 1, :] .= infectionmodel.rᵢᵗ[inode.i, :] .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
     M[2, 2, :] .= (1 .- infectionmodel.rᵢᵗ[inode.i, :]) .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
 end

@@ -117,8 +117,8 @@ function compute_sumargexp!(
 
     for (kindex, k) in enumerate(inode.∂)
         iindex = nodes[k].∂_idx[inode.i]
-        sumargexp.summ .+= inode.cavities[kindex].m .* inode.νs[kindex]  #chiedere ad anna se è più veloce riga o colonna
-        sumargexp.sumμ .+= inode.cavities[kindex].μ .* nodes[k].νs[iindex][1:end-1]
+        sumargexp.summ .+= inode.cavities[kindex].m[1:end-1] .* inode.νs[kindex]  #chiedere ad anna se è più veloce riga o colonna
+        sumargexp.sumμ .+= inode.cavities[kindex].μ .* nodes[k].νs[iindex]
     end
 
     return sumargexp
