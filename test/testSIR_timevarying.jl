@@ -57,7 +57,7 @@ model.obsmat .= obsmat
 
 # computational constants
 epsconv = 1e-10 # convergence threshold
-maxiter = 5e2 # max number of iterations
+maxiter = 500 # max number of iterations
 damp = 0.1 # damping factor
 μ_cutoff = -1 # cutoff for convergence
 
