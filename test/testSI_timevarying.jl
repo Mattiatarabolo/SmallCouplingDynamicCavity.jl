@@ -57,7 +57,7 @@ model.obsmat .= obsmat
 epsconv = 1e-10 # convergence threshold
 maxiter = 500 # max number of iterations
 damp = 0.1 # damping factor
-μ_cutoff = -1 # cutoff for convergence
+μ_cutoff = -1.0 # cutoff for convergence
 
 margtest = load("data/margSI_timevarying.jld2", "marg")
 
