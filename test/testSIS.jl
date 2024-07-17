@@ -52,10 +52,10 @@ end
 model.obsmat .= obsmat
 
 # computational constants
-epsconv::Float64 = 1e-10 # convergence threshold
-maxiter::Int = 5e2 # max number of iterations
-damp::Float64 = 0.1 # damping factor
-μ_cutoff::Float64 = -1 # cutoff for convergence
+epsconv = 1e-10 # convergence threshold
+maxiter = 5e2 # max number of iterations
+damp = 0.1 # damping factor
+μ_cutoff = -1 # cutoff for convergence
 
 margtest = load("data/margSIS.jld2", "marg")
 

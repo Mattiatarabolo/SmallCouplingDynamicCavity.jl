@@ -329,3 +329,151 @@ function run_SCDC(
 
     return nodes
 end
+
+
+"""
+    run_SCDC(
+        model::EpidemicModel{TI,TG},
+        obsprob::Function,
+        γ::Float64,
+        maxiter::Vector{Int64},
+        epsconv::Float64,
+        damp::Vector{Float64};
+        μ_cutoff::Float64 = -Inf,
+        callback::Function=(x...) -> nothing) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+
+Runs the Small Coupling Dynamic Cavity (SCDC) inference algorithm.
+
+This function performs SCDC inference on the specified epidemic model, using the provided evidence (likelihood) probability function, and other parameters such as the probability of being a patient zero, maximum number of iterations, convergence threshold, damping factor, etc. It iteratively updates cavity messages until convergence or until the maximum number of iterations is reached. It implements a dumping schedule for the damping factor, where the dumping factor is changed after a certain number of iterations, specified by the `maxiter` and `damp` arguments.
+
+# Arguments
+- `model`: An [`EpidemicModel`](@ref) representing the epidemic model.
+- `obsprob`: A function representing the evidence (likelihood) probability p(O|x) of an observation O given the planted state x.
+- `γ`: The probability of being a patient zero.
+- `maxiter`: Vector of maximum number of iterations for each damping factor. 
+- `epsconv`: The convergence threshold of the algorithm.
+- `damp`: Vector of damping factors used in the damping schedule.
+- `μ_cutoff`: (Optional) Lower cut-off for the values of μ.
+- `n_iter_nc`: (Optional) Number of iterations for non-converged messages. The messages are averaged over this number of iterations.
+- `damp_nc`: (Optional) Damping factor for non-converged messages.
+- `callback`: (Optional) A callback function to monitor the progress of the algorithm.
+
+# Returns
+- `nodes`: An array of [`Node`](@ref) objects representing the updated node states after inference.
+
+"""
+function run_SCDC(
+    model::EpidemicModel{TI,TG},
+    obsprob::Function,
+    γ::Float64,
+    maxiter::Vector{Int64},
+    epsconv::Float64,
+    damp::Float64;
+    μ_cutoff::Vector{Float64} = [-Inf for _ in 1::length(maxiter)],
+    n_iter_nc::Int64 = 1,
+    damp_nc::Float64 = 0.0,
+    callback::Function=(x...) -> nothing) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+
+    # Debugging
+    if length(maxiter) != length(damp)
+        throw(DomainError("Length of maxiter and damp vectors must be the same!"))
+    end
+
+    # Initialize prior probabilities based on the expected mean number of source patients (γ)
+    prior = zeros(n_states(model.Disease), model.N)
+    prior[1, :] .= (1 - γ) # x_i = S
+    prior[2, :] .= γ # x_i = I
+
+    # Format nodes for inference
+    nodes = nodes_formatting(model, obsprob)
+
+    # Initialize message objects
+    M = TransMat(model.T, model.Disease)
+    ρ = FBm(model.T, model.Disease)
+    sumargexp = SumM(model.T)
+    updmess = Updmess(model.T, model.Disease)
+    newmess = Message(0, 0, model.T)
+    newmarg = Marginal(0, model.T, model.Disease)
+
+    ε = 0.0
+
+    # Iteratively update cavity messages until convergence or maximum iterations reached
+    iter = 0
+    for (mi, d) in Iterators.zip(maxiter, damp)
+        for i in 1:mi
+            ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, updmess, newmess, newmarg, d, μ_cutoff, model.Disease)
+
+            iter += 1
+            callback(nodes, iter, ε)
+            
+            # Check for convergence
+            if ε < epsconv
+                println("Converged after $iter iterations")
+                break
+            end
+        end
+    end
+
+    # Check if convergence not achieved
+    if ε > epsconv
+        println("NOT converged after $maxiter iterations")
+
+        avg_mess = [[Message(node.i, j, model.T; zero_mess=true) for j in node.∂] for node in nodes]
+
+        for iter in 1:n_iter_nc
+            # compute average messages
+            for inode in nodes
+                sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
+                for (jindex, j) in enumerate(inode.∂)
+                    iindex = nodes[j].∂_idx[inode.i]
+                    M, ρ = compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model.T, model.Disease)
+                    clear!(updmess, newmess)
+                    updmess.lognumm .= log.(ρ.fwm) .+ log.(ρ.bwm)
+                    updmess.signμ .= sign.(ρ.bwm[1, 2:end] - ρ.bwm[2, 2:end])
+                    updmess.lognumμ .= log.(ρ.fwm[1, 1:end-1]) .+ log.(M[1, 1, :]) .+ log.(abs.(ρ.bwm[1, 2:end] - ρ.bwm[2, 2:end]))
+                    updmess.logZ .= log.(dropdims(sum(ρ.fwm .* ρ.bwm, dims=1), dims=1))
+
+                    newmess.m .= exp.(updmess.lognumm[2, :] .- updmess.logZ)
+                    newmess.μ .= max.(updmess.signμ .* exp.(updmess.lognumμ .- updmess.logZ[1:end-1]), μ_cutoff)
+
+                    newmess.m .= nodes[j].cavities[iindex].m.*damp_nc .+ newmess.m.*(1 - damp_nc)
+                    newmess.μ .= nodes[j].cavities[iindex].μ.*damp_nc .+ newmess.μ.*(1 - damp_nc)
+                    
+                    avg_mess[j][iindex].m .+= newmess.m
+                    avg_mess[j][iindex].μ .+= newmess.μ
+
+                    nodes[j].cavities[iindex].m .= newmess.m
+                    nodes[j].cavities[iindex].μ .= newmess.μ 
+                end
+            end
+        end
+        
+        if n_iter_nc != 0
+            # compute average messages
+            for inode in nodes
+                for (_, j) in enumerate(inode.∂)
+                    iindex = nodes[j].∂_idx[inode.i]
+                    nodes[j].cavities[iindex].m .= avg_mess[j][iindex].m ./ n_iter_nc
+                    nodes[j].cavities[iindex].μ .= avg_mess[j][iindex].μ ./ n_iter_nc
+                end
+            end
+        end
+    end
+    
+
+    # Update messages between nodes
+    for inode in nodes
+        sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
+        for (jindex, j) in enumerate(inode.∂)
+            iindex = nodes[j].∂_idx[inode.i]
+            _, ρ = compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model.T, model.Disease)
+            nodes[j].ρs[iindex].fwm .= ρ.fwm
+            nodes[j].ρs[iindex].bwm .= ρ.bwm
+        end
+    end
+
+    # Compute final marginal probabilities
+    compute_marginals!(nodes, sumargexp, M, ρ, model.T, prior, updmess, newmarg, μ_cutoff, model.Disease)
+
+    return nodes
+end
