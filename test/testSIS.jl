@@ -22,21 +22,21 @@ end
 infectionmodel = SIS(0.0, r₀, NV, T)
 model = EpidemicModel(infectionmodel, G, T, log.(1 .- λ))
 
-configtest=[1.0  1.0  1.0  1.0  1.0  0.0;
-0.0  1.0  1.0  1.0  0.0  1.0;
-0.0  0.0  0.0  0.0  1.0  0.0;
-0.0  0.0  1.0  1.0  1.0  1.0;
-0.0  0.0  1.0  0.0  1.0  0.0;
-0.0  0.0  0.0  0.0  1.0  1.0;
-0.0  0.0  0.0  1.0  1.0  1.0;
-0.0  0.0  0.0  0.0  1.0  1.0;
-0.0  0.0  0.0  1.0  0.0  1.0;
-0.0  1.0  1.0  0.0  1.0  0.0]
+configtest=[1  1  1  1  1  0;
+            0  1  1  1  0  1;
+            0  0  0  0  1  0;
+            0  0  1  1  1  1;
+            0  0  1  0  1  0;
+            0  0  0  0  1  1;
+            0  0  0  1  1  1;
+            0  0  0  0  1  1;
+            0  0  0  1  0  1;
+            0  1  1  0  1  0]
 
 # generate observations at the last time
 # define the observation probability
-function obsprob(Ob::Float64, x::Float64)
-    if Ob == -1.0
+function obsprob(Ob, x)
+    if Ob == -1
         return 1.0
     else
         return Float64(Ob == x)

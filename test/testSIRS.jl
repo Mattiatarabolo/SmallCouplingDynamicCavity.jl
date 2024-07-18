@@ -36,8 +36,8 @@ configtest=[1 1 1 1 2 0;
 
     # generate observations at the last time
 # define the observation probability
-function obsprob(Ob::Float64, x::Float64)
-    if Ob == -1.0
+function obsprob(Ob, x)
+    if Ob == -1
         return 1.0
     else
         return Float64(Ob == x)
