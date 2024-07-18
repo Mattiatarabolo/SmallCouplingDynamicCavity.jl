@@ -88,7 +88,7 @@ end
     Random.seed!(1)
     nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff)
 
-    marg = zeros(NV,2,T+1)
+    marg = zeros(NV,3,T+1)
     for (i,node) in enumerate(nodes)
         marg[i,:,:] = node.marg.m
     end
