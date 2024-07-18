@@ -202,6 +202,8 @@ end
         epsconv::Float64,
         damp::Float64;
         μ_cutoff::Float64 = -Inf,
+        n_iter_nc::Int64 = 1,
+        damp_nc::Float64 = 0.0,
         callback::Function=(x...) -> nothing) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
 Runs the Small Coupling Dynamic Cavity (SCDC) inference algorithm.
@@ -340,6 +342,8 @@ end
         epsconv::Float64,
         damp::Vector{Float64};
         μ_cutoff::Float64 = -Inf,
+        n_iter_nc::Int64 = 1,
+        damp_nc::Float64 = 0.0,
         callback::Function=(x...) -> nothing) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
 Runs the Small Coupling Dynamic Cavity (SCDC) inference algorithm.
@@ -369,7 +373,7 @@ function run_SCDC(
     maxiter::Vector{Int64},
     epsconv::Float64,
     damp::Vector{Float64};
-    μ_cutoff::Vector{Float64} = -Inf,
+    μ_cutoff::Float64 = -Inf,
     n_iter_nc::Int64 = 1,
     damp_nc::Float64 = 0.0,
     callback::Function=(x...) -> nothing) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
