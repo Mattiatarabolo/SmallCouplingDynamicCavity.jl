@@ -56,8 +56,6 @@ maxiter = 500 # max number of iterations
 damp = 0.1 # damping factor
 μ_cutoff = -1.0 # cutoff for convergence
 
-margtest = load("data/margSI.jld2", "marg")
-
 @testset "SimSI" begin
     # epidemic simulation
     Random.seed!(3)
@@ -75,5 +73,22 @@ end
         marg[i,:,:] = node.marg.m
     end
 
+    margtest = load("data/margSI.jld2", "marg")
     @test marg ≈ margtest
+end
+
+@testset "inferenceSIscheme" begin
+    maxiter = [90, 50]  # max number of iterations scheme
+    damp = [0.9, 0.5]  # damping factor scheme
+
+    Random.seed!(1)
+    nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff)
+
+    marg = zeros(NV,2,T+1)
+    for (i,node) in enumerate(nodes)
+        marg[i,:,:] = node.marg.m
+    end
+
+    margtestscheme = load("data/margSIscheme.jld2", "marg")
+    @test marg ≈ margtestscheme
 end
