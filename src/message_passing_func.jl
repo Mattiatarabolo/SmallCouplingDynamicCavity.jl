@@ -403,6 +403,7 @@ function run_SCDC(
 
     # Iteratively update cavity messages until convergence or maximum iterations reached
     iter = 0
+    check_convergence = false
     for (mi, d) in Iterators.zip(maxiter, damp)
         for i in 1:mi
             ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, updmess, newmess, newmarg, d, μ_cutoff, model.Disease)
@@ -413,8 +414,13 @@ function run_SCDC(
             # Check for convergence
             if ε < epsconv
                 println("Converged after $iter iterations")
+                check_convergence = true
                 break
             end
+        end
+
+        if check_convergence
+            break
         end
     end
 
