@@ -164,11 +164,12 @@ function update_cavities!(
     newmarg::Marginal,
     damp::Float64,
     μ_cutoff::Float64,
-    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    infectionmodel::TI,
+    rng::AbstractRNG) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     ε = 0.0
 
-    for inode in shuffle(nodes)
+    for inode in shuffle(rng, nodes)
         ε = max(ε, update_node!(inode, nodes, sumargexp, M, ρ, prior, T, updmess, newmess, newmarg, damp, μ_cutoff, infectionmodel))
     end
 
@@ -185,9 +186,10 @@ function compute_marginals!(
     updmess::Updmess,
     newmarg::Marginal,
     μ_cutoff::Float64,
-    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    infectionmodel::TI,
+    rng::AbstractRNG) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
-    for inode in nodes
+    for inode in shuffle(rng, nodes)
         newmarg = update_single_marginal!(inode, nodes, sumargexp, M, ρ, prior, T, updmess, newmarg, μ_cutoff, infectionmodel)
         inode.marg.m .= newmarg.m
     end
@@ -204,7 +206,8 @@ end
         μ_cutoff::Float64 = -Inf,
         n_iter_nc::Int64 = 1,
         damp_nc::Float64 = 0.0,
-        callback::Function=(x...) -> nothing) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+        callback::Function=(x...) -> nothing
+        rng::AbstractRNG=Xoshiro()) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
 Runs the Small Coupling Dynamic Cavity (SCDC) inference algorithm.
 
@@ -221,6 +224,7 @@ This function performs SCDC inference on the specified epidemic model, using the
 - `n_iter_nc`: (Optional) Number of iterations for non-converged messages. The messages are averaged over this number of iterations.
 - `damp_nc`: (Optional) Damping factor for non-converged messages.
 - `callback`: (Optional) A callback function to monitor the progress of the algorithm.
+- `rng`: (Optional) Random number generator.
 
 # Returns
 - `nodes`: An array of [`Node`](@ref) objects representing the updated node states after inference.
@@ -236,7 +240,8 @@ function run_SCDC(
     μ_cutoff::Float64 = -Inf,
     n_iter_nc::Int64 = 1,
     damp_nc::Float64 = 0.0,
-    callback::Function=(x...) -> nothing) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    callback::Function=(x...) -> nothing,
+    rng::AbstractRNG=Xoshiro()) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     # Initialize prior probabilities based on the expected mean number of source patients (γ)
     prior = zeros(n_states(model.Disease), model.N)
@@ -258,7 +263,7 @@ function run_SCDC(
 
     # Iteratively update cavity messages until convergence or maximum iterations reached
     for iter = 1:maxiter
-        ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, updmess, newmess, newmarg, damp, μ_cutoff, model.Disease)
+        ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, updmess, newmess, newmarg, damp, μ_cutoff, model.Disease, rng)
         callback(nodes, iter, ε)
 
         # Check for convergence
@@ -276,7 +281,7 @@ function run_SCDC(
 
         for iter in 1:n_iter_nc
             # compute average messages
-            for inode in nodes
+            for inode in shuffle(rng, nodes)
                 sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
                 for (jindex, j) in enumerate(inode.∂)
                     iindex = nodes[j].∂_idx[inode.i]
@@ -316,7 +321,7 @@ function run_SCDC(
     
 
     # Update messages between nodes
-    for inode in nodes
+    for inode in shuffle(rng, nodes)
         sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
         for (jindex, j) in enumerate(inode.∂)
             iindex = nodes[j].∂_idx[inode.i]
@@ -327,7 +332,7 @@ function run_SCDC(
     end
 
     # Compute final marginal probabilities
-    compute_marginals!(nodes, sumargexp, M, ρ, model.T, prior, updmess, newmarg, μ_cutoff, model.Disease)
+    compute_marginals!(nodes, sumargexp, M, ρ, model.T, prior, updmess, newmarg, μ_cutoff, model.Disease, rng)
 
     return nodes
 end
@@ -344,7 +349,8 @@ end
         μ_cutoff::Float64 = -Inf,
         n_iter_nc::Int64 = 1,
         damp_nc::Float64 = 0.0,
-        callback::Function=(x...) -> nothing) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+        callback::Function=(x...) -> nothing,
+        rng::AbstractRNG=Xoshiro()) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
 Runs the Small Coupling Dynamic Cavity (SCDC) inference algorithm.
 
@@ -361,6 +367,7 @@ This function performs SCDC inference on the specified epidemic model, using the
 - `n_iter_nc`: (Optional) Number of iterations for non-converged messages. The messages are averaged over this number of iterations.
 - `damp_nc`: (Optional) Damping factor for non-converged messages.
 - `callback`: (Optional) A callback function to monitor the progress of the algorithm.
+- `rng`: (Optional) Random number generator.
 
 # Returns
 - `nodes`: An array of [`Node`](@ref) objects representing the updated node states after inference.
@@ -376,7 +383,8 @@ function run_SCDC(
     μ_cutoff::Float64 = -Inf,
     n_iter_nc::Int64 = 1,
     damp_nc::Float64 = 0.0,
-    callback::Function=(x...) -> nothing) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    callback::Function=(x...) -> nothing,
+    rng::AbstractRNG=Xoshiro()) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     # Debugging
     if length(maxiter) != length(damp)
@@ -405,8 +413,8 @@ function run_SCDC(
     iter = 0
     check_convergence = false
     for (mi, d) in Iterators.zip(maxiter, damp)
-        for i in 1:mi
-            ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, updmess, newmess, newmarg, d, μ_cutoff, model.Disease)
+        for _ in 1:mi
+            ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, updmess, newmess, newmarg, d, μ_cutoff, model.Disease, rng)
 
             iter += 1
             callback(nodes, iter, ε)
@@ -432,7 +440,7 @@ function run_SCDC(
 
         for iter in 1:n_iter_nc
             # compute average messages
-            for inode in nodes
+            for inode in shuffle(rng, nodes)
                 sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
                 for (jindex, j) in enumerate(inode.∂)
                     iindex = nodes[j].∂_idx[inode.i]
@@ -472,7 +480,7 @@ function run_SCDC(
     
 
     # Update messages between nodes
-    for inode in nodes
+    for inode in shuffle(rng, nodes)
         sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
         for (jindex, j) in enumerate(inode.∂)
             iindex = nodes[j].∂_idx[inode.i]
@@ -483,7 +491,7 @@ function run_SCDC(
     end
 
     # Compute final marginal probabilities
-    compute_marginals!(nodes, sumargexp, M, ρ, model.T, prior, updmess, newmarg, μ_cutoff, model.Disease)
+    compute_marginals!(nodes, sumargexp, M, ρ, model.T, prior, updmess, newmarg, μ_cutoff, model.Disease, rng)
 
     return nodes
 end
