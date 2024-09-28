@@ -71,7 +71,7 @@ margtest = load("data/margSIS_timevarying.jld2", "marg")
 
     @test config ≈ configtest
 end
-#=
+
 @testset "inferenceSIS_timevarying" begin
     Random.seed!(1)
     nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff)
@@ -101,4 +101,3 @@ end
     margtestscheme = load("data/margSISscheme_timevarying.jld2", "marg")
     @test marg ≈ margtestscheme
 end
-=#

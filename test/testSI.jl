@@ -63,7 +63,7 @@ damp = 0.1 # damping factor
 
     @test config ≈ configtest
 end
-#=
+
 @testset "inferenceSI" begin
     Random.seed!(1)
     nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff)
@@ -92,4 +92,3 @@ end
     margtestscheme = load("data/margSIscheme.jld2", "marg")
     @test marg ≈ margtestscheme
 end
-=#
