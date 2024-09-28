@@ -69,7 +69,7 @@ function nodes_formatting(
 
     for i in 1:model.N
         obs = ones(3, model.T + 1)
-        @inbounds @fastmath for t in 1:inode.model.T+1
+        @inbounds @fastmath for t in 1:model.T+1
             obs[1, t] = obsprob(model.obsmat[i, t], 0)
             obs[2, t] = obsprob(model.obsmat[i, t], 1)
             obs[3, t] = obsprob(model.obsmat[i, t], 2)
@@ -94,7 +94,7 @@ function nodes_formatting(
 
     for i in 1:model.N
         obs = ones(3, model.T + 1)
-        @inbounds @fastmath for t in 1:inode.model.T+1
+        @inbounds @fastmath for t in 1:model.T+1
             obs[1, t] = obsprob(model.obsmat[i, t], 0)
             obs[2, t] = obsprob(model.obsmat[i, t], 1)
             obs[3, t] = obsprob(model.obsmat[i, t], 2)
