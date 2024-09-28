@@ -435,7 +435,7 @@ function run_SCDC(
     check_convergence = false
     for (mi, d) in Iterators.zip(maxiter, damp)
         for _ in 1:mi
-            update_cavities!(ε, nodes, sumargexp, M, ρ, prior, model.T, norm, newmess, damp, μ_cutoff, model.Disease, rng)
+            update_cavities!(ε, nodes, sumargexp, M, ρ, prior, model.T, norm, newmess, d, μ_cutoff, model.Disease, rng)
             iter += 1
             callback(nodes, iter, ε)
             
