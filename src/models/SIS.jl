@@ -60,7 +60,7 @@ function nodes_formatting(
 
     for i in 1:model.N
         obs = ones(2, model.T + 1)
-        @inbounds @fastmath for t in 1:model.T+1
+        @inbounds for t in 1:model.T+1
             obs[1, t] = obsprob(model.obsmat[i, t], 0)
             obs[2, t] = obsprob(model.obsmat[i, t], 1)
         end
@@ -83,14 +83,14 @@ function nodes_formatting(
 
     for i in 1:model.N
         obs = ones(2, model.T + 1)
-        @inbounds @fastmath for t in 1:model.T+1
+        @inbounds for t in 1:model.T+1
             obs[1, t] = obsprob(model.obsmat[i, t], 0)
             obs[2, t] = obsprob(model.obsmat[i, t], 1)
         end
 
         ∂ = Vector{Int}()
 
-        @inbounds @fastmath for t in 1:model.T
+        @inbounds for t in 1:model.T
             ∂ = union(∂, neighbors(model.G[t], i))
         end
 
@@ -112,7 +112,7 @@ function fill_transmat_cav!(
     sumargexp::SumM,
     infectionmodel::SIS) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
-    @inbounds @fastmath for t in 1:inode.model.T
+    @inbounds for t in 1:inode.model.T
         M[1, 1, t] = exp(sumargexp.summ[t] - inode.cavities[jindex].m[t] * inode.νs[jindex][t]) * (1 - infectionmodel.εᵢᵗ[inode.i, t]) * inode.obs[1, t]
         M[1, 2, t] = (1 - exp(sumargexp.summ[t] - inode.cavities[jindex].m[t] * inode.νs[jindex][t]) * (1 - infectionmodel.εᵢᵗ[inode.i, t])) * inode.obs[1, t]
         M[2, 1, t] = infectionmodel.rᵢᵗ[inode.i, t] * exp(sumargexp.sumμ[t] - inode.cavities[jindex].μ[t] * jnode.νs[iindex][t]) * inode.obs[2, t]
@@ -126,7 +126,7 @@ function fill_transmat_marg!(
     sumargexp::SumM,
     infectionmodel::SIS) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
-    @inbounds @fastmath for t in 1:inode.model.T
+    @inbounds for t in 1:inode.model.T
         M[1, 1, t] = exp(sumargexp.summ[t]) * (1 - infectionmodel.εᵢᵗ[inode.i, t]) * inode.obs[1, t]
         M[1, 2, t] = (1 - exp(sumargexp.summ[t]) * (1 - infectionmodel.εᵢᵗ[inode.i, t])) * inode.obs[1, t]
         M[2, 1, t] = infectionmodel.rᵢᵗ[inode.i, t] * exp(sumargexp.sumμ[t]) * inode.obs[2, t]
@@ -174,7 +174,7 @@ function sim_epidemics(
     config[patient_zero, 1] .+= 1
 
     hs = zeros(model.N)
-    @inbounds @fastmath for t in 1:model.T
+    @inbounds for t in 1:model.T
         hs .= (config[:, t]' * model.ν[:, :, t])'
         config[:, t+1] .= [x * rand(Bernoulli(1 - r)) + (1 - x) * rand(Bernoulli(1 - exp(h))) for (x, h, r) in zip(config[:, t], hs, model.Disease.rᵢᵗ[:, t])]
     end
