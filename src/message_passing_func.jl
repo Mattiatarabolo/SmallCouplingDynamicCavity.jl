@@ -18,7 +18,7 @@ function update_single_message!(
             normmess += ρ.fwm[x,t] * ρ.bwm[x,t]
         end
         newmess.m[t] =ρ.fwm[2,t] * ρ.bwm[2,t+1] / normmess
-        newmess.μ[t] =  max(ρ.fwm[1,t] * M[1,1,t] * (ρ.bwm[1,t+1] - ρ.bwm[2,t+1]) / normmes, μ_cutoff)
+        newmess.μ[t] =  max(ρ.fwm[1,t] * M[1,1,t] * (ρ.bwm[1,t+1] - ρ.bwm[2,t+1]) / normmess, μ_cutoff)
 
         newmess.m[t] = jnode.cavities[iindex].m[t]*damp + newmess.m[t]*(1 - damp)
         newmess.μ[t] = jnode.cavities[iindex].μ[t]*damp + newmess.μ[t]*(1 - damp)
@@ -97,7 +97,7 @@ function update_single_marginal!(
 
     clear!(M, ρ)
 
-    @inbounds @fatsmath for x in 1:n_states(infectionmodel)
+    @inbounds @fastmath for x in 1:n_states(infectionmodel)
         ρ.fwm[x, 1] = prior[x, inode.i]
         ρ.bwm[x, T+1] = inode.obs[x, T+1]
     end

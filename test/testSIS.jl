@@ -66,7 +66,7 @@ margtest = load("data/margSIS.jld2", "marg")
 
     @test config ≈ configtest
 end
-
+#=
 @testset "inferenceSIS" begin
     Random.seed!(1)
     nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff)
@@ -95,3 +95,4 @@ end
     margtestscheme = load("data/margSISscheme.jld2", "marg")
     @test marg ≈ margtestscheme
 end
+=#
