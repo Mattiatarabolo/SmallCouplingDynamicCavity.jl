@@ -6,57 +6,16 @@ function clear!(
     fill!(ρ.bwm, 1.0)
 end
 
-function clear!(
-    M::Array{Float64,3}, 
-    ρ::FBm, 
-    updmess::Updmess)
-
-    fill!(M, 0.0)
-    fill!(ρ.fwm, 1.0)
-    fill!(ρ.bwm, 1.0)
-    fill!(updmess.lognumm, 0.0)
-    fill!(updmess.lognumμ, 0.0)
-    fill!(updmess.signμ, 1.0)
-    fill!(updmess.logZ, 0.0)
-end
-
-function clear!(
-    updmess::Updmess, 
+function clear!( 
     newmess::Message)
 
-    fill!(updmess.lognumm, 0.0)
-    fill!(updmess.lognumμ, 0.0)
-    fill!(updmess.signμ, 1.0)
-    fill!(updmess.logZ, 0.0)
     fill!(newmess.m, 1.0)
     fill!(newmess.μ, 0.0)
-end
-
-function clear!(
-    updmess::Updmess, 
-    newmarg::Marginal)
-
-    fill!(updmess.lognumm, 0.0)
-    fill!(updmess.lognumμ, 0.0)
-    fill!(updmess.signμ, 1.0)
-    fill!(updmess.logZ, 0.0)
-    fill!(newmarg.m, 1.0)
-    fill!(newmarg.μ, 0.0)
 end
 
 function clear!(SumM::SumM)
     fill!(SumM.summ, 0.0)
     fill!(SumM.sumμ, 0.0)
-end
-
-function normupdate(
-    oldmess::Vector{Float64}, 
-    newmess::Vector{Float64})
-    return maximum(abs.(oldmess .- newmess))
-end
-
-function ρ_norm(ρ::Vector{Float64})
-    return ρ ./ sum(ρ)
 end
 
 

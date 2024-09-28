@@ -60,8 +60,10 @@ function nodes_formatting(
 
     for i in 1:model.N
         obs = ones(2, model.T + 1)
-        obs[1, :] = [obsprob(Ob, 0) for Ob in model.obsmat[i, :]]
-        obs[2, :] = [obsprob(Ob, 1) for Ob in model.obsmat[i, :]]
+        @inbounds @fastmath for t in 1:model.T+1
+            obs[1, t] = obsprob(model.obsmat[i, t], 0)
+            obs[2, t] = obsprob(model.obsmat[i, t], 1)
+        end
 
         ∂ = neighbors(model.G, i)
 
@@ -81,12 +83,14 @@ function nodes_formatting(
 
     for i in 1:model.N
         obs = ones(2, model.T + 1)
-        obs[1, :] = [obsprob(Ob, 0) for Ob in model.obsmat[i, :]]
-        obs[2, :] = [obsprob(Ob, 1) for Ob in model.obsmat[i, :]]
+        @inbounds @fastmath for t in 1:model.T+1
+            obs[1, t] = obsprob(model.obsmat[i, t], 0)
+            obs[2, t] = obsprob(model.obsmat[i, t], 1)
+        end
 
         ∂ = Vector{Int}()
 
-        for t in 1:model.T
+        @inbounds @fastmath for t in 1:model.T
             ∂ = union(∂, neighbors(model.G[t], i))
         end
 
@@ -108,10 +112,12 @@ function fill_transmat_cav!(
     sumargexp::SumM,
     infectionmodel::SIS) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
-    M[1, 1, :] .= (exp.(sumargexp.summ .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex])).*(1 .- infectionmodel.εᵢᵗ[inode.i, :]) .* inode.obs[1, 1:end-1]
-    M[1, 2, :] .= (1 .- exp.(sumargexp.summ .- inode.cavities[jindex].m[1:end-1] .* inode.νs[jindex]).*(1 .- infectionmodel.εᵢᵗ[inode.i, :])) .* inode.obs[1, 1:end-1]
-    M[2, 1, :] .= infectionmodel.rᵢᵗ[inode.i, :] .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex]) .* inode.obs[2, 1:end-1]
-    M[2, 2, :] .= (1 .- infectionmodel.rᵢᵗ[inode.i, :]) .* exp.(sumargexp.sumμ .- inode.cavities[jindex].μ .* jnode.νs[iindex]) .* inode.obs[2, 1:end-1]
+    @inbounds @fastmath for t in 1:inode.model.T
+        M[1, 1, t] = exp(sumargexp.summ[t] - inode.cavities[jindex].m[t] * inode.νs[jindex][t]) * (1 - infectionmodel.εᵢᵗ[inode.i, t]) * inode.obs[1, t]
+        M[1, 2, t] = (1 - exp(sumargexp.summ[t] - inode.cavities[jindex].m[t] * inode.νs[jindex][t]) * (1 - infectionmodel.εᵢᵗ[inode.i, t])) * inode.obs[1, t]
+        M[2, 1, t] = infectionmodel.rᵢᵗ[inode.i, t] * exp(sumargexp.sumμ[t] - inode.cavities[jindex].μ[t] * jnode.νs[iindex][t]) * inode.obs[2, t]
+        M[2, 2, t] = (1 - infectionmodel.rᵢᵗ[inode.i, t]) * exp(sumargexp.sumμ[t] - inode.cavities[jindex].μ[t] * jnode.νs[iindex][t]) * inode.obs[2, t]
+    end
 end
 
 function fill_transmat_marg!(
@@ -120,10 +126,12 @@ function fill_transmat_marg!(
     sumargexp::SumM,
     infectionmodel::SIS) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
-    M[1, 1, :] .= (exp.(sumargexp.summ)).*(1 .- infectionmodel.εᵢᵗ[inode.i, :]) .* inode.obs[1, 1:end-1]
-    M[1, 2, :] .= (1 .- exp.(sumargexp.summ).*(1 .- infectionmodel.εᵢᵗ[inode.i, :])) .* inode.obs[1, 1:end-1]
-    M[2, 1, :] .= infectionmodel.rᵢᵗ[inode.i, :] .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
-    M[2, 2, :] .= (1 .- infectionmodel.rᵢᵗ[inode.i, :]) .* exp.(sumargexp.sumμ) .* inode.obs[2, 1:end-1]
+    @inbounds @fastmath for t in 1:inode.model.T
+        M[1, 1, t] = exp(sumargexp.summ[t]) * (1 - infectionmodel.εᵢᵗ[inode.i, t]) * inode.obs[1, t]
+        M[1, 2, t] = (1 - exp(sumargexp.summ[t]) * (1 - infectionmodel.εᵢᵗ[inode.i, t])) * inode.obs[1, t]
+        M[2, 1, t] = infectionmodel.rᵢᵗ[inode.i, t] * exp(sumargexp.sumμ[t]) * inode.obs[2, t]
+        M[2, 2, t] = (1 - infectionmodel.rᵢᵗ[inode.i, t]) * exp(sumargexp.sumμ[t]) * inode.obs[2, t]
+    end
 end
 
 """
@@ -166,7 +174,7 @@ function sim_epidemics(
     config[patient_zero, 1] .+= 1
 
     hs = zeros(model.N)
-    for t in 1:model.T
+    @inbounds @fastmath for t in 1:model.T
         hs .= (config[:, t]' * model.ν[:, :, t])'
         config[:, t+1] .= [x * rand(Bernoulli(1 - r)) + (1 - x) * rand(Bernoulli(1 - exp(h))) for (x, h, r) in zip(config[:, t], hs, model.Disease.rᵢᵗ[:, t])]
     end
