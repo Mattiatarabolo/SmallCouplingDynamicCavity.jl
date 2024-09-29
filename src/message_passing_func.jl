@@ -17,7 +17,7 @@ function update_single_message!(
             normmess += ρ.fwm[x,t] * ρ.bwm[x,t]
         end
         newmess.m[t] = ρ.fwm[2,t] * ρ.bwm[2,t] / normmess
-        newmess.μ[t] =  min(ρ.fwm[1,t] * M[1,1,t] * (ρ.bwm[1,t+1] - ρ.bwm[2,t+1]) / normmess, μ_cutoff)
+        newmess.μ[t] =  max(ρ.fwm[1,t] * M[1,1,t] * (ρ.bwm[1,t+1] - ρ.bwm[2,t+1]) / normmess, μ_cutoff)
 
         newmess.m[t] = jnode.cavities[iindex].m[t]*damp + newmess.m[t]*(1 - damp)
         newmess.μ[t] = jnode.cavities[iindex].μ[t]*damp + newmess.μ[t]*(1 - damp)
