@@ -141,14 +141,14 @@ function check_mess(m::Float64, μ::Float64, norm::Float64, t::Int)
 end
 
 
-function check_ρ(fw::Vector{Float64}, bw::Vector{Float64}, fwp::Vector{Float64}, bwl::Vector{Float64}, t::Int, T::Int)
+function check_ρ(i::Int, fw::Vector{Float64}, bw::Vector{Float64}, fwp::Vector{Float64}, bwl::Vector{Float64}, t::Int, T::Int)
     if !isfinite(fw[1]) || !isfinite(fw[2]) || !isfinite(bw[1]) || !isfinite(bw[2]) 
-        println("fw[$t] = $fw, bw[$(T+1-t)] = $bw")
+        println("node $i:fw[$t] = $fw, bw[$(T+1-t)] = $bw")
         throw(DomainError("NaN evaluated when computing ρ!"))
     end
 
     if fw==[0.0,0.0] || bw==[0.0,0.0]
-        println("fw[$t] = $fw, bw[$(T+1-t)] = $bw, fw[$(t-1)] = $fwp, bw[$(T+2-t)] = $bwl,")
+        println("node $i: fw[$t] = $fw, bw[$(T+1-t)] = $bw, fw[$(t-1)] = $fwp, bw[$(T+2-t)] = $bwl,")
         throw(DomainError("0.0 evaluated when computing ρ!"))
     end
 end
