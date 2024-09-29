@@ -131,3 +131,19 @@ function ROC_curve(marg::Vector{Float64}, x::Vector{TI}) where {TI<:Integer}
 
     return fp_rates, tp_rates, auc
 end
+
+
+function check_mess(m::Float64, μ::Float64, norm::Float64, t::Int)
+    if !isfinite(m) || !isfinite(μ)
+        println("t = $t: m = $m, μ = $μ, norm = $norm")
+        throw(DomainError("NaN evaluated when updating message!"))
+    end
+end
+
+
+function check_ρ(fw::Float64, bw::Float64, t::Int, T::Int)
+    if !isfinite(fw) || !isfinite(bw)
+        println("fw[$t] = $fw, bw[$(T+1-t)] = $bw")
+        throw(DomainError("NaN evaluated when computing ρ!"))
+    end
+end

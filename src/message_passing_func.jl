@@ -18,6 +18,7 @@ function update_single_message!(
         end
         newmess.m[t] = ρ.fwm[2,t] * ρ.bwm[2,t] / normmess
         newmess.μ[t] =  max(ρ.fwm[1,t] * M[1,1,t] * (ρ.bwm[1,t+1] - ρ.bwm[2,t+1]) / normmess, μ_cutoff)
+        check_mess(newmess.m[t], newmess.μ[t], normmess, t)
 
         newmess.m[t] = jnode.cavities[iindex].m[t]*damp + newmess.m[t]*(1 - damp)
         newmess.μ[t] = jnode.cavities[iindex].μ[t]*damp + newmess.μ[t]*(1 - damp)
@@ -34,13 +35,10 @@ function update_single_message!(
         normmess += ρ.fwm[x,inode.model.T+1] * ρ.bwm[x,inode.model.T+1]
     end
     newmess.m[inode.model.T+1] = ρ.fwm[2,inode.model.T+1] * ρ.bwm[2,inode.model.T+1] / normmess
+    check_mess(newmess.m[inode.model.T+1], 0.0, normmess, inode.model.T+1)
     newmess.m[inode.model.T+1] = jnode.cavities[iindex].m[inode.model.T+1]*damp + newmess.m[inode.model.T+1]*(1 - damp)
     ε = max(ε, abs(newmess.m[inode.model.T+1] - jnode.cavities[iindex].m[inode.model.T+1]))
     jnode.cavities[iindex].m[inode.model.T+1] = newmess.m[inode.model.T+1]
-
-    if any(!isfinite, newmess.m) || any(!isfinite, newmess.μ)
-        throw(DomainError("NaN evaluated when updating message!"))
-    end
 end
 
 
@@ -71,12 +69,9 @@ function compute_ρ!(
             for x2 in 1:n_states(infectionmodel)
                 ρ.fwm[x1, t+1] = ρ.fwm[x2, t] * M[x2, x1, t]
                 ρ.bwm[x1, T+1-t] = ρ.bwm[x2, T+2-t] * M[x1, x2, T+1-t]
+                check_ρ(ρ.fwm[x1, t+1], ρ.bwm[x1, T+1-t], t, T)
             end
         end
-    end
-
-    if any(!isfinite, ρ.fwm) || any(!isfinite, ρ.bwm)
-        throw(DomainError("NaN evaluated when computing ρ!"))
     end
 end
 
