@@ -148,7 +148,9 @@ function check_ρ(inode::Node{TI,TG}, ρ::FBm, M::Array{Float64,3}, t::Int, T::I
     end
 
     if ρ.fwm[:,t+1]==[0.0,0.0] || ρ.bwm[:,T+1-t]==[0.0,0.0]
-        println("node $(inode.i): fw = $(ρ.fwm), bw = $(ρ.bwm)")
+        println("node $(inode.i): \n fw =")
+        display(ρ)
+        println("M =")
         display(M)
         println("obsprob = $(inode.obs)")s
         throw(DomainError("0.0 evaluated when computing ρ!"))
