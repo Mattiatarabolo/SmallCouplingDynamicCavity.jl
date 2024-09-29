@@ -71,7 +71,7 @@ function compute_ρ!(
                 ρ.bwm[x1, T+1-t] = ρ.bwm[x2, T+2-t] * M[x1, x2, T+1-t]
             end
         end
-        check_ρ(inode, ρ, t, T)
+        check_ρ(inode, ρ, M, t, T)
     end
 end
 
