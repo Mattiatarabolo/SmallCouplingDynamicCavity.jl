@@ -66,9 +66,11 @@ function compute_ρ!(
     # fwd-bwd update
     for t in 1:T
         for x1 in 1:n_states(infectionmodel)
+            ρ.fwm[x1, t+1] = 0.0
+            ρ.bwm[x1, T+1-t] = 0.0
             for x2 in 1:n_states(infectionmodel)
-                ρ.fwm[x1, t+1] = ρ.fwm[x2, t] * M[x2, x1, t]
-                ρ.bwm[x1, T+1-t] = ρ.bwm[x2, T+2-t] * M[x1, x2, T+1-t]
+                ρ.fwm[x1, t+1] += ρ.fwm[x2, t] * M[x2, x1, t]
+                ρ.bwm[x1, T+1-t] += ρ.bwm[x2, T+2-t] * M[x1, x2, T+1-t]
             end
         end
         check_ρ(inode, ρ, M, t, T)
@@ -100,9 +102,11 @@ function update_single_marginal!(
     # fwd-bwd update
     for t in 1:T
         for x1 in 1:n_states(infectionmodel)
+            ρ.fwm[x1, t+1] = 0.0
+            ρ.bwm[x1, T+1-t] = 0.0
             for x2 in 1:n_states(infectionmodel)
-                ρ.fwm[x1, t+1] = ρ.fwm[x2, t] * M[x2, x1, t]
-                ρ.bwm[x1, T+1-t] = ρ.bwm[x2, T+2-t] * M[x1, x2, T+1-t]
+                ρ.fwm[x1, t+1] += ρ.fwm[x2, t] * M[x2, x1, t]
+                ρ.bwm[x1, T+1-t] += ρ.bwm[x2, T+2-t] * M[x1, x2, T+1-t]
             end
         end
     end
