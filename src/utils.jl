@@ -152,7 +152,7 @@ function check_ρ(inode::Node{TI,TG}, ρ::FBm, M::Array{Float64,3}, t::Int, T::I
         display(ρ)
         println("M =")
         display(M)
-        println("obsprob = $(inode.obs)")s
+        println("obsprob = $(inode.obs)")
         throw(DomainError("0.0 evaluated when computing ρ!"))
     end
 end
