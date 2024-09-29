@@ -69,7 +69,7 @@ function compute_ρ!(
             for x2 in 1:n_states(infectionmodel)
                 ρ.fwm[x1, t+1] = ρ.fwm[x2, t] * M[x2, x1, t]
                 ρ.bwm[x1, T+1-t] = ρ.bwm[x2, T+2-t] * M[x1, x2, T+1-t]
-                check_ρ(ρ.fwm[x1, t+1], ρ.bwm[x1, T+1-t], t, T)
+                check_ρ(ρ.fwm[x1, t+1], ρ.bwm[x1, T+1-t], x1, t, T)
             end
         end
     end
