@@ -2,61 +2,20 @@ function clear!(
     M::Array{Float64,3}, 
     ρ::FBm)
     fill!(M, 0.0)
-    fill!(ρ.fwm, 1.0)
-    fill!(ρ.bwm, 1.0)
+    fill!(ρ.fwm, 0.0)
+    fill!(ρ.bwm, 0.0)
 end
 
-function clear!(
-    M::Array{Float64,3}, 
-    ρ::FBm, 
-    updmess::Updmess)
-
-    fill!(M, 0.0)
-    fill!(ρ.fwm, 1.0)
-    fill!(ρ.bwm, 1.0)
-    fill!(updmess.lognumm, 0.0)
-    fill!(updmess.lognumμ, 0.0)
-    fill!(updmess.signμ, 1.0)
-    fill!(updmess.logZ, 0.0)
-end
-
-function clear!(
-    updmess::Updmess, 
+function clear!( 
     newmess::Message)
 
-    fill!(updmess.lognumm, 0.0)
-    fill!(updmess.lognumμ, 0.0)
-    fill!(updmess.signμ, 1.0)
-    fill!(updmess.logZ, 0.0)
-    fill!(newmess.m, 1.0)
+    fill!(newmess.m, 0.0)
     fill!(newmess.μ, 0.0)
-end
-
-function clear!(
-    updmess::Updmess, 
-    newmarg::Marginal)
-
-    fill!(updmess.lognumm, 0.0)
-    fill!(updmess.lognumμ, 0.0)
-    fill!(updmess.signμ, 1.0)
-    fill!(updmess.logZ, 0.0)
-    fill!(newmarg.m, 1.0)
-    fill!(newmarg.μ, 0.0)
 end
 
 function clear!(SumM::SumM)
     fill!(SumM.summ, 0.0)
     fill!(SumM.sumμ, 0.0)
-end
-
-function normupdate(
-    oldmess::Vector{Float64}, 
-    newmess::Vector{Float64})
-    return maximum(abs.(oldmess .- newmess))
-end
-
-function ρ_norm(ρ::Vector{Float64})
-    return ρ ./ sum(ρ)
 end
 
 
@@ -171,4 +130,27 @@ function ROC_curve(marg::Vector{Float64}, x::Vector{TI}) where {TI<:Integer}
     auc /= total_positive_instances * total_negative_instances
 
     return fp_rates, tp_rates, auc
+end
+
+
+function check_mess(m::Float64, μ::Float64, norm::Float64, t::Int)
+    if !isfinite(m) || !isfinite(μ)
+        println("t = $t: m = $m, μ = $μ, norm = $norm")
+        throw(DomainError("NaN evaluated when updating message!"))
+    end
+end
+
+
+function check_ρ(inode::Node{TI,TG}, ρ::FBm, M::Array{Float64,3}, t::Int, T::Int) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    if !isfinite(ρ.fwm[1,t+1]) || !isfinite(ρ.fwm[2,t+1]) || !isfinite(ρ.bwm[1,T+1-t]) || !isfinite(ρ.bwm[2,T+1-t]) 
+        println("node $(inode.i): fw = $(ρ.fwm), bw = $(ρ.bwm)")
+        throw(DomainError("NaN evaluated when computing ρ!"))
+    end
+
+    if ρ.fwm[:,t+1]==[0.0,0.0] || ρ.bwm[:,T+1-t]==[0.0,0.0]
+        println("node $(inode.i): \n fw = $(ρ.fwm) \n bw = $(ρ.bwm)")
+        display(M)
+        println("obsprob = $(inode.obs)")
+        throw(DomainError("0.0 evaluated when computing ρ!"))
+    end
 end

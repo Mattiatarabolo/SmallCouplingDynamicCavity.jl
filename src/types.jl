@@ -14,7 +14,7 @@ struct FBm
         T::Int, 
         infectionmodel::TI) where {TI <:InfectionModel}
     
-        new(ones(n_states(infectionmodel), T + 1), ones(n_states(infectionmodel), T + 1))
+        new(zeros(n_states(infectionmodel), T + 1), zeros(n_states(infectionmodel), T + 1))
     end
 
 end
@@ -29,20 +29,6 @@ struct SumM
     end
 end
 
-
-struct Updmess
-    lognumm::Array{Float64,2}
-    lognumμ::Vector{Float64}
-    signμ::Vector{Float64}
-    logZ::Vector{Float64}
-    
-    function Updmess(
-        T::Int, 
-        infectionmodel::TI) where {TI <:InfectionModel}
-        
-        new(zeros(n_states(infectionmodel), T + 1), zeros(T), ones(T), zeros(T + 1))
-    end
-end
 
 """
     Message
