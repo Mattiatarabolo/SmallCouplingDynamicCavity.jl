@@ -141,9 +141,14 @@ function check_mess(m::Float64, μ::Float64, norm::Float64, t::Int)
 end
 
 
-function check_ρ(fw::Float64, bw::Float64, t::Int, T::Int)
+function check_ρ(fw::Float64, bw::Float64, x::Int, t::Int, T::Int)
     if !isfinite(fw) || !isfinite(bw)
-        println("fw[$t] = $fw, bw[$(T+1-t)] = $bw")
+        println("st = $x: fw[$t] = $fw, bw[$(T+1-t)] = $bw")
         throw(DomainError("NaN evaluated when computing ρ!"))
+    end
+
+    if fw==0.0 || bw==0.0
+        println("st = $x: fw[$t] = $fw, bw[$(T+1-t)] = $bw")
+        throw(DomainError("0.0 evaluated when computing ρ!"))
     end
 end
