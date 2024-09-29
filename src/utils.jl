@@ -141,14 +141,16 @@ function check_mess(m::Float64, μ::Float64, norm::Float64, t::Int)
 end
 
 
-function check_ρ(i::Int, fw::Vector{Float64}, bw::Vector{Float64}, fwp::Vector{Float64}, bwl::Vector{Float64}, t::Int, T::Int)
-    if !isfinite(fw[1]) || !isfinite(fw[2]) || !isfinite(bw[1]) || !isfinite(bw[2]) 
-        println("node $i:fw[$t] = $fw, bw[$(T+1-t)] = $bw")
+function check_ρ(inode::Node{TI,TG}, ρ::FBm, M::Array{Float64,3}, t::Int, T::Int) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    if !isfinite(ρ.fwm[1,t+1]) || !isfinite(ρ.fwm[2,t+1]) || !isfinite(ρ.bwm[1,T+1-t]) || !isfinite(ρ.bwm[2,T+1-t]) 
+        println("node $(inode.i): fw = $(ρ.fwm), bw = $(ρ.bwm)")
         throw(DomainError("NaN evaluated when computing ρ!"))
     end
 
-    if fw==[0.0,0.0] || bw==[0.0,0.0]
-        println("node $i: fw[$t] = $fw, bw[$(T+1-t)] = $bw, fw[$(t-1)] = $fwp, bw[$(T+2-t)] = $bwl,")
+    if ρ.fwm[:,t+1]==[0.0,0.0] || ρ.bwm[:,T+1-t]==[0.0,0.0]
+        println("node $(inode.i): fw = $(ρ.fwm), bw = $(ρ.bwm)")
+        display(M)
+        println("obsprob = $(inode.obs)")s
         throw(DomainError("0.0 evaluated when computing ρ!"))
     end
 end
