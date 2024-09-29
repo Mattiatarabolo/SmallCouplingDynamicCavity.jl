@@ -2,14 +2,14 @@ function clear!(
     M::Array{Float64,3}, 
     ρ::FBm)
     fill!(M, 0.0)
-    fill!(ρ.fwm, 1.0)
-    fill!(ρ.bwm, 1.0)
+    fill!(ρ.fwm, 0.0)
+    fill!(ρ.bwm, 0.0)
 end
 
 function clear!( 
     newmess::Message)
 
-    fill!(newmess.m, 1.0)
+    fill!(newmess.m, 0.0)
     fill!(newmess.μ, 0.0)
 end
 

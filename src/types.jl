@@ -14,7 +14,7 @@ struct FBm
         T::Int, 
         infectionmodel::TI) where {TI <:InfectionModel}
     
-        new(ones(n_states(infectionmodel), T + 1), ones(n_states(infectionmodel), T + 1))
+        new(zeros(n_states(infectionmodel), T + 1), zeros(n_states(infectionmodel), T + 1))
     end
 
 end
