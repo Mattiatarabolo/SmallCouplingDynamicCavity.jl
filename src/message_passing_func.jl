@@ -187,6 +187,8 @@ function update_cavities!(
     infectionmodel::TI,
     rng::AbstractRNG) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
+    ε = 0.0
+
     for inode in shuffle(rng, nodes)
         update_node!(ε, inode, nodes, sumargexp, M, ρ, prior, T, newmess, damp, μ_cutoff, infectionmodel)
     end
@@ -273,9 +275,10 @@ function run_SCDC(
     sumargexp = SumM(model.T)
     newmess = Message(0, 0, model.T)
 
+    ε = 0.0
+
     # Iteratively update cavity messages until convergence or maximum iterations reached
     for iter = 1:maxiter
-        ε = 0.0
         update_cavities!(ε, nodes, sumargexp, M, ρ, prior, model.T, newmess, damp, μ_cutoff, model.Disease, rng)
         callback(nodes, iter, ε)
 
