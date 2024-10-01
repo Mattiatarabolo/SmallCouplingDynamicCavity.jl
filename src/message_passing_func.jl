@@ -31,7 +31,7 @@ function update_single_message!(
 
     # t = T+1
     normmess = 0.0
-    @inbounds @fastmath for x in 1:n_states(inode.model.Disease)
+    @inbounds @fastmath @simd for x in 1:n_states(inode.model.Disease)
         normmess += ρ.fwm[x,inode.model.T+1] * ρ.bwm[x,inode.model.T+1]
     end
     newmess.m[inode.model.T+1] = ρ.fwm[2,inode.model.T+1] * ρ.bwm[2,inode.model.T+1] / normmess
@@ -56,7 +56,7 @@ function compute_ρ!(
 
     #clear!(M, ρ)
 
-    @inbounds @fastmath for x in 1:n_states(infectionmodel)
+    @inbounds @fastmath @simd for x in 1:n_states(infectionmodel)
         ρ.fwm[x, 1] = prior[x, inode.i]
         ρ.bwm[x, T+1] = inode.obs[x, T+1]
     end
@@ -68,7 +68,7 @@ function compute_ρ!(
         @inbounds @fastmath for x1 in 1:n_states(infectionmodel)
             ρ.fwm[x1, t+1] = 0.0
             ρ.bwm[x1, T+1-t] = 0.0
-            @inbounds @fastmath for x2 in 1:n_states(infectionmodel)
+            @inbounds @fastmath @simd for x2 in 1:n_states(infectionmodel)
                 ρ.fwm[x1, t+1] += ρ.fwm[x2, t] * M[x2, x1, t]
                 ρ.bwm[x1, T+1-t] += ρ.bwm[x2, T+2-t] * M[x1, x2, T+1-t]
             end
@@ -104,7 +104,7 @@ function update_single_marginal!(
         @inbounds @fastmath for x1 in 1:n_states(infectionmodel)
             ρ.fwm[x1, t+1] = 0.0
             ρ.bwm[x1, T+1-t] = 0.0
-            @inbounds @fastmath for x2 in 1:n_states(infectionmodel)
+            @inbounds @fastmath @simd for x2 in 1:n_states(infectionmodel)
                 ρ.fwm[x1, t+1] += ρ.fwm[x2, t] * M[x2, x1, t]
                 ρ.bwm[x1, T+1-t] += ρ.bwm[x2, T+2-t] * M[x1, x2, T+1-t]
             end
@@ -113,20 +113,20 @@ function update_single_marginal!(
 
     @inbounds @fastmath for t in 1:inode.model.T
         normmarg = 0.0
-        @inbounds @fastmath for x in 1:n_states(infectionmodel)
+        @inbounds @fastmath @simd for x in 1:n_states(infectionmodel)
             normmarg += ρ.fwm[x,t] * ρ.bwm[x,t]
         end
-        @inbounds @fastmath for x in 1:n_states(infectionmodel)
+        @inbounds @fastmath @simd for x in 1:n_states(infectionmodel)
             inode.marg.m[x,t] = ρ.fwm[x,t] * ρ.bwm[x,t] / normmarg
         end
     end
 
     # t = T+1
     normmarg = 0.0
-    @inbounds @fastmath for x in 1:n_states(infectionmodel)
+    @inbounds @fastmath @simd for x in 1:n_states(infectionmodel)
         normmarg += ρ.fwm[x,T+1] * ρ.bwm[x,T+1]
     end
-    @inbounds @fastmath for x in 1:n_states(infectionmodel)
+    @inbounds @fastmath @simd for x in 1:n_states(infectionmodel)
         inode.marg.m[x,T+1] = ρ.fwm[x,T+1] * ρ.bwm[x,T+1] / normmarg
     end
 end
@@ -141,7 +141,7 @@ function compute_sumargexp!(
 
     @inbounds @fastmath for (kindex, k) in enumerate(inode.∂)
         iindex = nodes[k].∂_idx[inode.i]
-        @inbounds @fastmath for t in 1:inode.model.T
+        @inbounds @fastmath @simd for t in 1:inode.model.T
             sumargexp.summ[t] += inode.cavities[kindex].m[t] * inode.νs[kindex][t]  
             sumargexp.sumμ[t] += inode.cavities[kindex].μ[t] * nodes[k].νs[iindex][t]
         end
@@ -261,7 +261,7 @@ function run_SCDC(
 
     # Initialize prior probabilities based on the expected mean number of source patients (γ)
     prior = zeros(n_states(model.Disease), model.N)
-    @inbounds @fastmath for i in 1:model.N
+    @inbounds @fastmath @simd for i in 1:model.N
         prior[1, i] = 1 - γ # x_i = S
         prior[2, i] = γ # x_i = I
     end
@@ -305,7 +305,7 @@ function run_SCDC(
                     #clear!(newmess)
                     @inbounds @fastmath for t in 1:model.T
                         norm = 0.0
-                        @inbounds @fastmath for x in 1:n_states(model.Disease)
+                        @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
                             norm += ρ.fwm[x,t] * ρ.bwm[x,t]
                         end
                         newmess.m[t] = ρ.fwm[2,t] * ρ.bwm[2,t] / norm
@@ -319,7 +319,7 @@ function run_SCDC(
                     end
                     # t = T+1
                     norm = 0.0
-                    @inbounds @fastmath for x in 1:n_states(model.Disease)
+                    @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
                         norm += ρ.fwm[x,model.T+1] * ρ.bwm[x,model.T+1]
                     end
                     newmess.m[model.T+1] = ρ.fwm[2,model.T+1] * ρ.bwm[2,model.T+1] / norm
@@ -404,7 +404,7 @@ function run_SCDC(
 
     # Initialize prior probabilities based on the expected mean number of source patients (γ)
     prior = zeros(n_states(model.Disease), model.N)
-    @inbounds @fastmath for i in 1:model.N
+    @inbounds @fastmath @simd for i in 1:model.N
         prior[1, i] = (1 - γ) # x_i = S
         prior[2, i] = γ # x_i = I
     end
@@ -458,7 +458,7 @@ function run_SCDC(
                     #clear!(newmess)
                     @inbounds @fastmath for t in 1:model.T
                         norm = 0.0
-                        @inbounds @fastmath for x in 1:n_states(model.Disease)
+                        @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
                             norm += ρ.fwm[x,t] * ρ.bwm[x,t]
                         end
                         newmess.m[t] = ρ.fwm[2,t] * ρ.bwm[2,t] / norm
@@ -472,7 +472,7 @@ function run_SCDC(
                     end
                     # t = T+1
                     norm = 0.0
-                    @inbounds @fastmath for x in 1:n_states(model.Disease)
+                    @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
                         norm += ρ.fwm[x,model.T+1] * ρ.bwm[x,model.T+1]
                     end
                     newmess.m[model.T+1] = ρ.fwm[2,model.T+1] * ρ.bwm[2,model.T+1] / norm
@@ -552,7 +552,7 @@ function run_SCDC(
 
     # Initialize prior probabilities based on the expected mean number of source patients (γ)
     prior = zeros(n_states(model.Disease), model.N)
-    @inbounds @fastmath for i in 1:model.N
+    @inbounds @fastmath @simd for i in 1:model.N
         prior[1, i] = (1 - γ) # x_i = S
         prior[2, i] = γ # x_i = I
     end
@@ -593,7 +593,7 @@ function run_SCDC(
                     #clear!(newmess)
                     @inbounds @fastmath for t in 1:model.T
                         norm = 0.0
-                        @inbounds @fastmath for x in 1:n_states(model.Disease)
+                        @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
                             norm += ρ.fwm[x,t] * ρ.bwm[x,t]
                         end
                         newmess.m[t] = ρ.fwm[2,t] * ρ.bwm[2,t] / norm
@@ -607,7 +607,7 @@ function run_SCDC(
                     end
                     # t = T+1
                     norm = 0.0
-                    @inbounds @fastmath for x in 1:n_states(model.Disease)
+                    @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
                         norm += ρ.fwm[x,model.T+1] * ρ.bwm[x,model.T+1]
                     end
                     newmess.m[model.T+1] = ρ.fwm[2,model.T+1] * ρ.bwm[2,model.T+1] / norm
@@ -682,7 +682,7 @@ function run_SCDC(
 
     # Initialize prior probabilities based on the expected mean number of source patients (γ)
     prior = zeros(n_states(model.Disease), model.N)
-    @inbounds @fastmath for i in 1:model.N
+    @inbounds @fastmath @simd for i in 1:model.N
         prior[1, i] = (1 - γ) # x_i = S
         prior[2, i] = γ # x_i = I
     end
@@ -733,7 +733,7 @@ function run_SCDC(
                     #clear!(newmess)
                     @inbounds @fastmath for t in 1:model.T
                         norm = 0.0
-                        @inbounds @fastmath for x in 1:n_states(model.Disease)
+                        @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
                             norm += ρ.fwm[x,t] * ρ.bwm[x,t]
                         end
                         newmess.m[t] = ρ.fwm[2,t] * ρ.bwm[2,t] / norm
@@ -747,7 +747,7 @@ function run_SCDC(
                     end
                     # t = T+1
                     norm = 0.0
-                    @inbounds @fastmath for x in 1:n_states(model.Disease)
+                    @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
                         norm += ρ.fwm[x,model.T+1] * ρ.bwm[x,model.T+1]
                     end
                     newmess.m[model.T+1] = ρ.fwm[2,model.T+1] * ρ.bwm[2,model.T+1] / norm
