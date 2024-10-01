@@ -280,6 +280,8 @@ function run_SCDC(
     sumargexp = SumM(model.T)
     newmess = Message(0, 0, model.T)
 
+    ε = 0.0
+
     # Iteratively update cavity messages until convergence or maximum iterations reached
     for iter = 1:maxiter
         ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, newmess, damp, μ_cutoff, model.Disease, rng)
@@ -420,6 +422,8 @@ function run_SCDC(
     ρ = FBm(model.T, model.Disease)
     sumargexp = SumM(model.T)
     newmess = Message(0, 0, model.T)
+
+    ε = 0.0
 
     # Iteratively update cavity messages until convergence or maximum iterations reached
     iter = 0
@@ -564,6 +568,8 @@ function run_SCDC(
     sumargexp = SumM(model.T)
     newmess = Message(0, 0, model.T)
 
+    ε = 0.0
+
     # Iteratively update cavity messages until convergence or maximum iterations reached
     for iter = 1:maxiter
         ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, newmess, damp, μ_cutoff, model.Disease, rng)
@@ -691,6 +697,8 @@ function run_SCDC(
     ρ = FBm(model.T, model.Disease)
     sumargexp = SumM(model.T)
     newmess = Message(0, 0, model.T)
+
+    ε = 0.0
 
     # Iteratively update cavity messages until convergence or maximum iterations reached
     iter = 0
