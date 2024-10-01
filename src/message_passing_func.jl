@@ -39,6 +39,8 @@ function update_single_message!(
     newmess.m[inode.model.T+1] = jnode.cavities[iindex].m[inode.model.T+1]*damp + newmess.m[inode.model.T+1]*(1 - damp)
     ε = max(ε, abs(newmess.m[inode.model.T+1] - jnode.cavities[iindex].m[inode.model.T+1]))
     jnode.cavities[iindex].m[inode.model.T+1] = newmess.m[inode.model.T+1]
+
+    return ε
 end
 
 
@@ -168,13 +170,14 @@ function update_node!(
     for (jindex, j) in enumerate(inode.∂)
         iindex = nodes[j].∂_idx[inode.i]
         compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, T, infectionmodel)
-        update_single_message!(ε, nodes[j], iindex, ρ, M, newmess, damp, inode, μ_cutoff)
+        ε = update_single_message!(ε, nodes[j], iindex, ρ, M, newmess, damp, inode, μ_cutoff)
     end
+
+    return ε
 end
 
 
 function update_cavities!(
-    ε::Float64,
     nodes::Vector{Node{TI,TG}},
     sumargexp::SumM,
     M::Array{Float64,3},
@@ -192,6 +195,8 @@ function update_cavities!(
     for inode in shuffle(rng, nodes)
         update_node!(ε, inode, nodes, sumargexp, M, ρ, prior, T, newmess, damp, μ_cutoff, infectionmodel)
     end
+
+    return ε
 end
 
 
@@ -275,11 +280,9 @@ function run_SCDC(
     sumargexp = SumM(model.T)
     newmess = Message(0, 0, model.T)
 
-    ε = 0.0
-
     # Iteratively update cavity messages until convergence or maximum iterations reached
     for iter = 1:maxiter
-        update_cavities!(ε, nodes, sumargexp, M, ρ, prior, model.T, newmess, damp, μ_cutoff, model.Disease, rng)
+        ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, newmess, damp, μ_cutoff, model.Disease, rng)
         callback(nodes, iter, ε)
 
         # Check for convergence
@@ -418,14 +421,12 @@ function run_SCDC(
     sumargexp = SumM(model.T)
     newmess = Message(0, 0, model.T)
 
-    ε = 0.0
-
     # Iteratively update cavity messages until convergence or maximum iterations reached
     iter = 0
     check_convergence = false
     for (mi, d) in Iterators.zip(maxiter, damp)
         for _ in 1:mi
-            update_cavities!(ε, nodes, sumargexp, M, ρ, prior, model.T, newmess, d, μ_cutoff, model.Disease, rng)
+            ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, newmess, d, μ_cutoff, model.Disease, rng)
             iter += 1
             callback(nodes, iter, ε)
             
@@ -563,11 +564,9 @@ function run_SCDC(
     sumargexp = SumM(model.T)
     newmess = Message(0, 0, model.T)
 
-    ε = 0.0
-
     # Iteratively update cavity messages until convergence or maximum iterations reached
     for iter = 1:maxiter
-        update_cavities!(ε, nodes, sumargexp, M, ρ, prior, model.T, newmess, damp, μ_cutoff, model.Disease, rng)
+        ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, newmess, damp, μ_cutoff, model.Disease, rng)
         callback(nodes, iter, ε)
 
         # Check for convergence
@@ -693,14 +692,12 @@ function run_SCDC(
     sumargexp = SumM(model.T)
     newmess = Message(0, 0, model.T)
 
-    ε = 0.0
-
     # Iteratively update cavity messages until convergence or maximum iterations reached
     iter = 0
     check_convergence = false
     for (mi, d) in Iterators.zip(maxiter, damp)
         for _ in 1:mi
-            update_cavities!(ε, nodes, sumargexp, M, ρ, prior, model.T, newmess, damp, μ_cutoff, model.Disease, rng)
+            ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, newmess, damp, μ_cutoff, model.Disease, rng)
             iter += 1
             callback(nodes, iter, ε)
             
