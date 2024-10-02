@@ -4,7 +4,6 @@ function update_single_message!(
     iindex::Int,
     ρ::FBm,
     M::Array{Float64,3},
-    newmess::Message,
     damp::Float64,
     inode::Node{TI,TG},
     μ_cutoff::Float64) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
@@ -13,20 +12,20 @@ function update_single_message!(
 
     @inbounds @fastmath for t in 1:inode.model.T
         normmess = 0.0
-        @inbounds @fastmath for x in 1:n_states(inode.model.Disease)
+        @inbounds @fastmath @simd for x in 1:n_states(inode.model.Disease)
             normmess += ρ.fwm[x,t] * ρ.bwm[x,t]
         end
-        newmess.m[t] = ρ.fwm[2,t] * ρ.bwm[2,t] / normmess
-        newmess.μ[t] =  max(ρ.fwm[1,t] * M[1,1,t] * (ρ.bwm[1,t+1] - ρ.bwm[2,t+1]) / normmess, μ_cutoff)
-        check_mess(newmess.m[t], newmess.μ[t], normmess, t)
+        newm = ρ.fwm[2,t] * ρ.bwm[2,t] / normmess
+        newμ =  max(ρ.fwm[1,t] * M[1,1,t] * (ρ.bwm[1,t+1] - ρ.bwm[2,t+1]) / normmess, μ_cutoff)
+        check_mess(newm, newμ, normmess, t)
 
-        newmess.m[t] = jnode.cavities[iindex].m[t]*damp + newmess.m[t]*(1 - damp)
-        newmess.μ[t] = jnode.cavities[iindex].μ[t]*damp + newmess.μ[t]*(1 - damp)
+        newm = jnode.cavities[iindex].m[t]*damp + newm[t]*(1 - damp)
+        newμ = jnode.cavities[iindex].μ[t]*damp + newμ[t]*(1 - damp)
 
-        ε = max(ε, abs(newmess.m[t] - jnode.cavities[iindex].m[t]))
+        ε = max(ε, abs(newm - jnode.cavities[iindex].m[t]))
 
-        jnode.cavities[iindex].m[t] = newmess.m[t]
-        jnode.cavities[iindex].μ[t] = newmess.μ[t]
+        jnode.cavities[iindex].m[t] = newm
+        jnode.cavities[iindex].μ[t] = newμ
     end
 
     # t = T+1
@@ -34,11 +33,11 @@ function update_single_message!(
     @inbounds @fastmath @simd for x in 1:n_states(inode.model.Disease)
         normmess += ρ.fwm[x,inode.model.T+1] * ρ.bwm[x,inode.model.T+1]
     end
-    newmess.m[inode.model.T+1] = ρ.fwm[2,inode.model.T+1] * ρ.bwm[2,inode.model.T+1] / normmess
-    check_mess(newmess.m[inode.model.T+1], 0.0, normmess, inode.model.T+1)
-    newmess.m[inode.model.T+1] = jnode.cavities[iindex].m[inode.model.T+1]*damp + newmess.m[inode.model.T+1]*(1 - damp)
-    ε = max(ε, abs(newmess.m[inode.model.T+1] - jnode.cavities[iindex].m[inode.model.T+1]))
-    jnode.cavities[iindex].m[inode.model.T+1] = newmess.m[inode.model.T+1]
+    newm = ρ.fwm[2,inode.model.T+1] * ρ.bwm[2,inode.model.T+1] / normmess
+    check_mess(newm, 0.0, normmess, inode.model.T+1)
+    newm = jnode.cavities[iindex].m[inode.model.T+1]*damp + newm*(1 - damp)
+    ε = max(ε, abs(newm - jnode.cavities[iindex].m[inode.model.T+1]))
+    jnode.cavities[iindex].m[inode.model.T+1] = newm
 
     return ε
 end
@@ -160,7 +159,6 @@ function update_node!(
     ρ::FBm, 
     prior::Array{Float64, 2}, 
     T::Int,
-    newmess::Message,
     damp::Float64,
     μ_cutoff::Float64,
     infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
@@ -170,7 +168,7 @@ function update_node!(
     for (jindex, j) in enumerate(inode.∂)
         iindex = nodes[j].∂_idx[inode.i]
         compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, T, infectionmodel)
-        ε = update_single_message!(ε, nodes[j], iindex, ρ, M, newmess, damp, inode, μ_cutoff)
+        ε = update_single_message!(ε, nodes[j], iindex, ρ, M, damp, inode, μ_cutoff)
     end
 
     return ε
@@ -184,7 +182,6 @@ function update_cavities!(
     ρ::FBm,
     prior::Array{Float64,2},
     T::Int,
-    newmess::Message,
     damp::Float64,
     μ_cutoff::Float64,
     infectionmodel::TI,
@@ -193,7 +190,7 @@ function update_cavities!(
     ε = 0.0
 
     for inode in shuffle(rng, nodes)
-        update_node!(ε, inode, nodes, sumargexp, M, ρ, prior, T, newmess, damp, μ_cutoff, infectionmodel)
+        update_node!(ε, inode, nodes, sumargexp, M, ρ, prior, T, damp, μ_cutoff, infectionmodel)
     end
 
     return ε
@@ -278,13 +275,12 @@ function run_SCDC(
     M = TransMat(model.T, model.Disease)
     ρ = FBm(model.T, model.Disease)
     sumargexp = SumM(model.T)
-    newmess = Message(0, 0, model.T)
 
     ε = 0.0
 
     # Iteratively update cavity messages until convergence or maximum iterations reached
     for iter = 1:maxiter
-        ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, newmess, damp, μ_cutoff, model.Disease, rng)
+        ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, damp, μ_cutoff, model.Disease, rng)
         callback(nodes, iter, ε)
 
         # Check for convergence
@@ -313,24 +309,24 @@ function run_SCDC(
                         @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
                             norm += ρ.fwm[x,t] * ρ.bwm[x,t]
                         end
-                        newmess.m[t] = ρ.fwm[2,t] * ρ.bwm[2,t] / norm
-                        newmess.μ[t] =  max(ρ.fwm[1,t] * M[1,1,t] * (ρ.bwm[1,t+1] - ρ.bwm[2,t+1]) / norm, μ_cutoff)
-                        newmess.m[t] = nodes[j].cavities[iindex].m[t]*damp_nc + newmess.m[t]*(1 - damp_nc)
-                        newmess.μ[t] = nodes[j].cavities[iindex].μ[t]*damp_nc + newmess.μ[t]*(1 - damp_nc)
-                        avg_mess[j][iindex].m[t] += newmess.m[t]
-                        avg_mess[j][iindex].μ[t] += newmess.μ[t]
-                        nodes[j].cavities[iindex].m[t] = newmess.m[t]
-                        nodes[j].cavities[iindex].μ[t] = newmess.μ[t]
+                        newm = ρ.fwm[2,t] * ρ.bwm[2,t] / norm
+                        newμ =  max(ρ.fwm[1,t] * M[1,1,t] * (ρ.bwm[1,t+1] - ρ.bwm[2,t+1]) / norm, μ_cutoff)
+                        newm = nodes[j].cavities[iindex].m[t]*damp_nc + newm*(1 - damp_nc)
+                        newμ = nodes[j].cavities[iindex].μ[t]*damp_nc + newμ*(1 - damp_nc)
+                        avg_mess[j][iindex].m[t] += newm
+                        avg_mess[j][iindex].μ[t] += newμ
+                        nodes[j].cavities[iindex].m[t] = newm
+                        nodes[j].cavities[iindex].μ[t] = newμ
                     end
                     # t = T+1
                     norm = 0.0
                     @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
                         norm += ρ.fwm[x,model.T+1] * ρ.bwm[x,model.T+1]
                     end
-                    newmess.m[model.T+1] = ρ.fwm[2,model.T+1] * ρ.bwm[2,model.T+1] / norm
-                    newmess.m[model.T+1] = nodes[j].cavities[iindex].m[model.T+1]*damp_nc + newmess.m[model.T+1]*(1 - damp_nc)
-                    avg_mess[j][iindex].m[model.T+1] += newmess.m[model.T+1]
-                    nodes[j].cavities[iindex].m[model.T+1] = newmess.m[model.T+1]
+                    newm = ρ.fwm[2,model.T+1] * ρ.bwm[2,model.T+1] / norm
+                    newm = nodes[j].cavities[iindex].m[model.T+1]*damp_nc + newm*(1 - damp_nc)
+                    avg_mess[j][iindex].m[model.T+1] += newm
+                    nodes[j].cavities[iindex].m[model.T+1] = newm
                 end
             end
         end
@@ -421,7 +417,7 @@ function run_SCDC(
     M = TransMat(model.T, model.Disease)
     ρ = FBm(model.T, model.Disease)
     sumargexp = SumM(model.T)
-    newmess = Message(0, 0, model.T)
+
 
     ε = 0.0
 
@@ -430,7 +426,7 @@ function run_SCDC(
     check_convergence = false
     for (mi, d) in Iterators.zip(maxiter, damp)
         for _ in 1:mi
-            ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, newmess, d, μ_cutoff, model.Disease, rng)
+            ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, d, μ_cutoff, model.Disease, rng)
             iter += 1
             callback(nodes, iter, ε)
             
@@ -466,24 +462,24 @@ function run_SCDC(
                         @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
                             norm += ρ.fwm[x,t] * ρ.bwm[x,t]
                         end
-                        newmess.m[t] = ρ.fwm[2,t] * ρ.bwm[2,t] / norm
-                        newmess.μ[t] =  max(ρ.fwm[1,t] * M[1,1,t] * (ρ.bwm[1,t+1] - ρ.bwm[2,t+1]) / norm, μ_cutoff)
-                        newmess.m[t] = nodes[j].cavities[iindex].m[t]*damp_nc + newmess.m[t]*(1 - damp_nc)
-                        newmess.μ[t] = nodes[j].cavities[iindex].μ[t]*damp_nc + newmess.μ[t]*(1 - damp_nc)
-                        avg_mess[j][iindex].m[t] += newmess.m[t]
-                        avg_mess[j][iindex].μ[t] += newmess.μ[t]
-                        nodes[j].cavities[iindex].m[t] = newmess.m[t]
-                        nodes[j].cavities[iindex].μ[t] = newmess.μ[t]
+                        newm = ρ.fwm[2,t] * ρ.bwm[2,t] / norm
+                        newμ =  max(ρ.fwm[1,t] * M[1,1,t] * (ρ.bwm[1,t+1] - ρ.bwm[2,t+1]) / norm, μ_cutoff)
+                        newm = nodes[j].cavities[iindex].m[t]*damp_nc + newm*(1 - damp_nc)
+                        newμ = nodes[j].cavities[iindex].μ[t]*damp_nc + newμ*(1 - damp_nc)
+                        avg_mess[j][iindex].m[t] += newm
+                        avg_mess[j][iindex].μ[t] += newμ
+                        nodes[j].cavities[iindex].m[t] = newm
+                        nodes[j].cavities[iindex].μ[t] = newμ
                     end
                     # t = T+1
                     norm = 0.0
                     @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
                         norm += ρ.fwm[x,model.T+1] * ρ.bwm[x,model.T+1]
                     end
-                    newmess.m[model.T+1] = ρ.fwm[2,model.T+1] * ρ.bwm[2,model.T+1] / norm
-                    newmess.m[model.T+1] = nodes[j].cavities[iindex].m[model.T+1]*damp_nc + newmess.m[model.T+1]*(1 - damp_nc)
-                    avg_mess[j][iindex].m[model.T+1] += newmess.m[model.T+1]
-                    nodes[j].cavities[iindex].m[model.T+1] = newmess.m[model.T+1]
+                    newm = ρ.fwm[2,model.T+1] * ρ.bwm[2,model.T+1] / norm
+                    newm = nodes[j].cavities[iindex].m[model.T+1]*damp_nc + newm*(1 - damp_nc)
+                    avg_mess[j][iindex].m[model.T+1] += newm
+                    nodes[j].cavities[iindex].m[model.T+1] = newm
                 end
             end
         end
@@ -566,13 +562,13 @@ function run_SCDC(
     M = TransMat(model.T, model.Disease)
     ρ = FBm(model.T, model.Disease)
     sumargexp = SumM(model.T)
-    newmess = Message(0, 0, model.T)
+
 
     ε = 0.0
 
     # Iteratively update cavity messages until convergence or maximum iterations reached
     for iter = 1:maxiter
-        ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, newmess, damp, μ_cutoff, model.Disease, rng)
+        ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, damp, μ_cutoff, model.Disease, rng)
         callback(nodes, iter, ε)
 
         # Check for convergence
@@ -601,24 +597,24 @@ function run_SCDC(
                         @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
                             norm += ρ.fwm[x,t] * ρ.bwm[x,t]
                         end
-                        newmess.m[t] = ρ.fwm[2,t] * ρ.bwm[2,t] / norm
-                        newmess.μ[t] =  max(ρ.fwm[1,t] * M[1,1,t] * (ρ.bwm[1,t+1] - ρ.bwm[2,t+1]) / norm, μ_cutoff)
-                        newmess.m[t] = nodes[j].cavities[iindex].m[t]*damp_nc + newmess.m[t]*(1 - damp_nc)
-                        newmess.μ[t] = nodes[j].cavities[iindex].μ[t]*damp_nc + newmess.μ[t]*(1 - damp_nc)
-                        avg_mess[j][iindex].m[t] += newmess.m[t]
-                        avg_mess[j][iindex].μ[t] += newmess.μ[t]
-                        nodes[j].cavities[iindex].m[t] = newmess.m[t]
-                        nodes[j].cavities[iindex].μ[t] = newmess.μ[t]
+                        newm = ρ.fwm[2,t] * ρ.bwm[2,t] / norm
+                        newμ =  max(ρ.fwm[1,t] * M[1,1,t] * (ρ.bwm[1,t+1] - ρ.bwm[2,t+1]) / norm, μ_cutoff)
+                        newm = nodes[j].cavities[iindex].m[t]*damp_nc + newm*(1 - damp_nc)
+                        newμ = nodes[j].cavities[iindex].μ[t]*damp_nc + newμ*(1 - damp_nc)
+                        avg_mess[j][iindex].m[t] += newm
+                        avg_mess[j][iindex].μ[t] += newμ
+                        nodes[j].cavities[iindex].m[t] = newm
+                        nodes[j].cavities[iindex].μ[t] = newμ
                     end
                     # t = T+1
                     norm = 0.0
                     @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
                         norm += ρ.fwm[x,model.T+1] * ρ.bwm[x,model.T+1]
                     end
-                    newmess.m[model.T+1] = ρ.fwm[2,model.T+1] * ρ.bwm[2,model.T+1] / norm
-                    newmess.m[model.T+1] = nodes[j].cavities[iindex].m[model.T+1]*damp_nc + newmess.m[model.T+1]*(1 - damp_nc)
-                    avg_mess[j][iindex].m[model.T+1] += newmess.m[model.T+1]
-                    nodes[j].cavities[iindex].m[model.T+1] = newmess.m[model.T+1]
+                    newm = ρ.fwm[2,model.T+1] * ρ.bwm[2,model.T+1] / norm
+                    newm = nodes[j].cavities[iindex].m[model.T+1]*damp_nc + newm*(1 - damp_nc)
+                    avg_mess[j][iindex].m[model.T+1] += newm
+                    nodes[j].cavities[iindex].m[model.T+1] = newm
                 end
             end
         end
@@ -696,7 +692,7 @@ function run_SCDC(
     M = TransMat(model.T, model.Disease)
     ρ = FBm(model.T, model.Disease)
     sumargexp = SumM(model.T)
-    newmess = Message(0, 0, model.T)
+
 
     ε = 0.0
 
@@ -705,7 +701,7 @@ function run_SCDC(
     check_convergence = false
     for (mi, d) in Iterators.zip(maxiter, damp)
         for _ in 1:mi
-            ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, newmess, damp, μ_cutoff, model.Disease, rng)
+            ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, damp, μ_cutoff, model.Disease, rng)
             iter += 1
             callback(nodes, iter, ε)
             
@@ -741,24 +737,24 @@ function run_SCDC(
                         @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
                             norm += ρ.fwm[x,t] * ρ.bwm[x,t]
                         end
-                        newmess.m[t] = ρ.fwm[2,t] * ρ.bwm[2,t] / norm
-                        newmess.μ[t] =  max(ρ.fwm[1,t] * M[1,1,t] * (ρ.bwm[1,t+1] - ρ.bwm[2,t+1]) / norm, μ_cutoff)
-                        newmess.m[t] = nodes[j].cavities[iindex].m[t]*damp_nc + newmess.m[t]*(1 - damp_nc)
-                        newmess.μ[t] = nodes[j].cavities[iindex].μ[t]*damp_nc + newmess.μ[t]*(1 - damp_nc)
-                        avg_mess[j][iindex].m[t] += newmess.m[t]
-                        avg_mess[j][iindex].μ[t] += newmess.μ[t]
-                        nodes[j].cavities[iindex].m[t] = newmess.m[t]
-                        nodes[j].cavities[iindex].μ[t] = newmess.μ[t]
+                        newm = ρ.fwm[2,t] * ρ.bwm[2,t] / norm
+                        newμ =  max(ρ.fwm[1,t] * M[1,1,t] * (ρ.bwm[1,t+1] - ρ.bwm[2,t+1]) / norm, μ_cutoff)
+                        newm = nodes[j].cavities[iindex].m[t]*damp_nc + newm*(1 - damp_nc)
+                        newμ = nodes[j].cavities[iindex].μ[t]*damp_nc + newμ*(1 - damp_nc)
+                        avg_mess[j][iindex].m[t] += newm
+                        avg_mess[j][iindex].μ[t] += newμ
+                        nodes[j].cavities[iindex].m[t] = newm
+                        nodes[j].cavities[iindex].μ[t] = newμ
                     end
                     # t = T+1
                     norm = 0.0
                     @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
                         norm += ρ.fwm[x,model.T+1] * ρ.bwm[x,model.T+1]
                     end
-                    newmess.m[model.T+1] = ρ.fwm[2,model.T+1] * ρ.bwm[2,model.T+1] / norm
-                    newmess.m[model.T+1] = nodes[j].cavities[iindex].m[model.T+1]*damp_nc + newmess.m[model.T+1]*(1 - damp_nc)
-                    avg_mess[j][iindex].m[model.T+1] += newmess.m[model.T+1]
-                    nodes[j].cavities[iindex].m[model.T+1] = newmess.m[model.T+1]
+                    newm = ρ.fwm[2,model.T+1] * ρ.bwm[2,model.T+1] / norm
+                    newm = nodes[j].cavities[iindex].m[model.T+1]*damp_nc + newm*(1 - damp_nc)
+                    avg_mess[j][iindex].m[model.T+1] += newm
+                    nodes[j].cavities[iindex].m[model.T+1] = newm
                 end
             end
         end

@@ -143,14 +143,10 @@ end
 
 function check_ρ(inode::Node{TI,TG}, ρ::FBm, M::Array{Float64,3}, t::Int, T::Int) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     if !isfinite(ρ.fwm[1,t+1]) || !isfinite(ρ.fwm[2,t+1]) || !isfinite(ρ.bwm[1,T+1-t]) || !isfinite(ρ.bwm[2,T+1-t]) 
-        println("node $(inode.i): fw = $(ρ.fwm), bw = $(ρ.bwm)")
         throw(DomainError("NaN evaluated when computing ρ!"))
     end
 
     if ρ.fwm[:,t+1]==[0.0,0.0] || ρ.bwm[:,T+1-t]==[0.0,0.0]
-        println("node $(inode.i): \n fw = $(ρ.fwm) \n bw = $(ρ.bwm)")
-        display(M)
-        println("obsprob = $(inode.obs)")
         throw(DomainError("0.0 evaluated when computing ρ!"))
     end
 end
