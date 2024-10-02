@@ -302,7 +302,7 @@ function run_SCDC(
         for _ in 1:n_iter_nc
             # compute average messages
             for inode in shuffle(rng, nodes)
-                sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
+                compute_sumargexp!(inode, nodes, sumargexp)
                 for (jindex, j) in enumerate(inode.∂)
                     iindex = nodes[j].∂_idx[inode.i]
                     compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model.T, model.Disease)
@@ -455,7 +455,7 @@ function run_SCDC(
         for _ in 1:n_iter_nc
             # compute average messages
             for inode in shuffle(rng, nodes)
-                sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
+                compute_sumargexp!(inode, nodes, sumargexp)
                 for (jindex, j) in enumerate(inode.∂)
                     iindex = nodes[j].∂_idx[inode.i]
                     compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model.T, model.Disease)
@@ -590,7 +590,7 @@ function run_SCDC(
         for _ in 1:n_iter_nc
             # compute average messages
             for inode in shuffle(rng, nodes)
-                sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
+                compute_sumargexp!(inode, nodes, sumargexp)
                 for (jindex, j) in enumerate(inode.∂)
                     iindex = nodes[j].∂_idx[inode.i]
                     compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model.T, model.Disease)
@@ -730,7 +730,7 @@ function run_SCDC(
         for _ in 1:n_iter_nc
             # compute average messages
             for inode in shuffle(rng, nodes)
-                sumargexp = compute_sumargexp!(inode, nodes, sumargexp)
+                compute_sumargexp!(inode, nodes, sumargexp)
                 for (jindex, j) in enumerate(inode.∂)
                     iindex = nodes[j].∂_idx[inode.i]
                     compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model.T, model.Disease)
