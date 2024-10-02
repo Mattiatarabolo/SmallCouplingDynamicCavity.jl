@@ -19,10 +19,11 @@ function update_single_message!(
         newμ =  max(ρ.fwm[1,t] * M[1,1,t] * (ρ.bwm[1,t+1] - ρ.bwm[2,t+1]) / normmess, μ_cutoff)
         check_mess(newm, newμ, normmess, t)
 
-        newm = jnode.cavities[iindex].m[t]*damp + newm[t]*(1 - damp)
-        newμ = jnode.cavities[iindex].μ[t]*damp + newμ[t]*(1 - damp)
+        newm = jnode.cavities[iindex].m[t]*damp + newm*(1 - damp)
+        newμ = jnode.cavities[iindex].μ[t]*damp + newμ*(1 - damp)
 
         ε = max(ε, abs(newm - jnode.cavities[iindex].m[t]))
+        
 
         jnode.cavities[iindex].m[t] = newm
         jnode.cavities[iindex].μ[t] = newμ
@@ -37,6 +38,7 @@ function update_single_message!(
     check_mess(newm, 0.0, normmess, inode.model.T+1)
     newm = jnode.cavities[iindex].m[inode.model.T+1]*damp + newm*(1 - damp)
     ε = max(ε, abs(newm - jnode.cavities[iindex].m[inode.model.T+1]))
+    
     jnode.cavities[iindex].m[inode.model.T+1] = newm
 
     return ε
@@ -168,7 +170,8 @@ function update_node!(
     for (jindex, j) in enumerate(inode.∂)
         iindex = nodes[j].∂_idx[inode.i]
         compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, T, infectionmodel)
-        ε = update_single_message!(ε, nodes[j], iindex, ρ, M, damp, inode, μ_cutoff)
+        ε = max(ε, update_single_message!(ε, nodes[j], iindex, ρ, M, damp, inode, μ_cutoff))
+        
     end
 
     return ε
@@ -190,7 +193,7 @@ function update_cavities!(
     ε = 0.0
 
     for inode in shuffle(rng, nodes)
-        update_node!(ε, inode, nodes, sumargexp, M, ρ, prior, T, damp, μ_cutoff, infectionmodel)
+        ε = max(ε, update_node!(ε, inode, nodes, sumargexp, M, ρ, prior, T, damp, μ_cutoff, infectionmodel))
     end
 
     return ε
