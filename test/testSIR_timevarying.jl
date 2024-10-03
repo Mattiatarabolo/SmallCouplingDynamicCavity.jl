@@ -38,15 +38,6 @@ configtest=[1 1 1 2 2 2;
             0 0 0 0 1 1]
 
 # generate observations at the last time
-# define the observation probability
-function obsprob(Ob, x)
-    if Ob == -1
-        return 1.0
-    else
-        return Float64(Ob == x)
-    end
-end
-
 obsmat = ones(Int8, NV, T+1) * (-1)
 for iₗ in 1:NV
     obsmat[iₗ, end] = configtest[iₗ, end]

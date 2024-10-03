@@ -171,7 +171,6 @@ function update_node!(
         iindex = nodes[j].∂_idx[inode.i]
         compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, T, infectionmodel)
         ε = max(ε, update_single_message!(ε, nodes[j], iindex, ρ, M, damp, inode, μ_cutoff))
-        
     end
 
     return ε

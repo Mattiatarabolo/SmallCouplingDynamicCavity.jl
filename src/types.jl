@@ -16,7 +16,6 @@ struct FBm
     
         new(zeros(n_states(infectionmodel), T + 1), zeros(n_states(infectionmodel), T + 1))
     end
-
 end
 
 
@@ -58,7 +57,7 @@ struct Message
         if zero_mess
             new(i, j, zeros(T + 1), zeros(T))
         else
-            new(i, j, ones(T + 1) ./ (T + 1), zeros(T))
+            new(i, j, ones(T + 1), zeros(T))
         end
     end
 end
@@ -85,7 +84,7 @@ struct Marginal
         i::Int,
         T::Int,
         infectionmodel::TI) where {TI <:InfectionModel}
-        new(i, ones(n_states(infectionmodel), T + 1) ./ (T + 1), zeros(T))
+        new(i, ones(n_states(infectionmodel), T + 1), zeros(T))
     end
 end
 
@@ -195,7 +194,7 @@ struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:Abstr
         G::TG, 
         T::Int, 
         ν::Array{Float64, 3}) where {TI<:InfectionModel,TG<:AbstractGraph}
-        new{TI,TG}(infectionmodel, G, nv(G), T, ν, zeros(nv(G),T+1))
+        new{TI,TG}(infectionmodel, G, nv(G), T, ν, ones(Int8, nv(G),T+1)*Int8(-1))
     end
 
 
@@ -249,8 +248,6 @@ struct Node{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}
     marg::Marginal
     """Cavities messages entering into the node from its neigbours. It is a vector of [`Message`](@ref), each one corresponding to a neighbour with the same order of ∂."""
     cavities::Vector{Message}
-    """Only for developers."""
-    ρs::Vector{FBm}
     """Infection couplings of the neighbours against the node."""
     νs::Vector{Vector{Float64}}
     """Observation probability matrix."""
@@ -271,8 +268,7 @@ struct Node{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}
             ∂,
             Dict(∂[idx] => idx for idx = 1:length(∂)),
             Marginal(i, T, model.Disease),
-            collect([Message(i, j, T) for j in ∂]),
-            collect([FBm(T, model.Disease) for _ in ∂]),
+            collect([Message(j, i, T) for j in ∂]),
             νs,
             obs,
             model)
