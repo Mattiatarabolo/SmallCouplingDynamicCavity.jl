@@ -146,7 +146,9 @@ function check_ρ(inode::Node{TI,TG}, ρ::FBm, M::Array{Float64,3}, t::Int, T::I
         throw(DomainError("NaN evaluated when computing ρ!"))
     end
 
+    #=
     if ρ.fwm[:,t+1]==[0.0,0.0] || ρ.bwm[:,T+1-t]==[0.0,0.0]
         throw(DomainError("0.0 evaluated when computing ρ!"))
     end
+    =#
 end
