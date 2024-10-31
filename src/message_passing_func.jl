@@ -505,7 +505,7 @@ function run_SCDC(
 end
 
 """
-    run_SCDC(
+    run_SCDC!(
         nodes::Vector{Node{TI,TG}}, 
         model::EpidemicModel{TI,TG}, 
         γ::Float64, 
@@ -536,11 +536,8 @@ This function performs SCDC inference on the specified epidemic model, using the
 - `damp_nc::Float64`: Damping factor for non-converging cases (default is 0.0).
 - `callback::Function`: Callback function to be called during iterations (default does nothing).
 - `rng::AbstractRNG`: Random number generator (default is Xoshiro).
-
-# Returns
-- `Vector{Node{TI,TG}}`: The updated vector of nodes after running the algorithm.
 """
-function run_SCDC(
+function run_SCDC!(
     nodes::Vector{Node{TI,TG}},
     model::EpidemicModel{TI,TG},
     γ::Float64,
@@ -635,13 +632,11 @@ function run_SCDC(
 
     # Compute final marginal probabilities
     compute_marginals!(nodes, sumargexp, M, ρ, model.T, prior, model.Disease, rng)
-
-    return nodes
 end
 
 
 """
-    run_SCDC(nodes::Vector{Node{TI,TG}}, model::EpidemicModel{TI,TG}, γ::Float64, maxiter::Vector{Int64}, epsconv::Float64, damp::Vector{Float64}; μ_cutoff::Float64 = -Inf, n_iter_nc::Int64 = 1, damp_nc::Float64 = 0.0, callback::Function=(x...) -> nothing, rng::AbstractRNG=Xoshiro(1234))
+    run_SCDC!(nodes::Vector{Node{TI,TG}}, model::EpidemicModel{TI,TG}, γ::Float64, maxiter::Vector{Int64}, epsconv::Float64, damp::Vector{Float64}; μ_cutoff::Float64 = -Inf, n_iter_nc::Int64 = 1, damp_nc::Float64 = 0.0, callback::Function=(x...) -> nothing, rng::AbstractRNG=Xoshiro(1234))
 
 Run the SCDC algorithm for epidemic modeling. The algorithm resumes the message-passing iterations from the current state of the nodes.
 
@@ -661,11 +656,8 @@ This function performs SCDC inference on the specified epidemic model, using the
 - `damp_nc::Float64`: Damping factor for non-converging cases (default is 0.0).
 - `callback::Function`: Callback function to be called during iterations (default does nothing).
 - `rng::AbstractRNG`: Random number generator (default is Xoshiro).
-
-# Returns
-- `Vector{Node{TI,TG}}`: The updated vector of nodes after running the algorithm.
 """
-function run_SCDC(
+function run_SCDC!(
     nodes::Vector{Node{TI,TG}},
     model::EpidemicModel{TI,TG},
     γ::Float64,
@@ -775,6 +767,4 @@ function run_SCDC(
 
     # Compute final marginal probabilities
     compute_marginals!(nodes, sumargexp, M, ρ, model.T, prior, model.Disease, rng)
-
-    return nodes
 end
