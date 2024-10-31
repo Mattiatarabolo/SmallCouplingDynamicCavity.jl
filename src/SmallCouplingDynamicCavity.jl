@@ -10,7 +10,7 @@ module SmallCouplingDynamicCavity
 
     using Graphs, Distributions, DocStringExtensions, Random
 
-    export sim_epidemics, run_SCDC, ROC_curve, bethe_lattice, SI, SIR, SIS, SIRS, EpidemicModel
+    export sim_epidemics, run_SCDC, run_SCDC!, ROC_curve, bethe_lattice, SI, SIR, SIS, SIRS, EpidemicModel
 
     abstract type InfectionModel
         # the infection probability is included into the temporal graph
