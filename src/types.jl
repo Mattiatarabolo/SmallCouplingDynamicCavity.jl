@@ -252,13 +252,11 @@ struct Node{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}
     νs::Vector{Vector{Float64}}
     """Observation probability matrix."""
     obs::Matrix{Float64}
-    """Epidemic model. It is a [`EpidemicModel`](@ref) type."""
-    model::EpidemicModel{TI,TG}
 
     function Node(
         i::Int, 
         ∂::Vector{Int}, 
-        T::Int, 
+        T::Int,
         νs::Vector{Vector{Float64}}, 
         obs::Matrix{Float64},
         model::EpidemicModel{TI,TG}) where {TI <:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
@@ -270,8 +268,7 @@ struct Node{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}
             Marginal(i, T, model.Disease),
             collect([Message(j, i, T) for j in ∂]),
             νs,
-            obs,
-            model)
+            obs)
     end
 end
 

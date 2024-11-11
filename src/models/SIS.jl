@@ -70,8 +70,8 @@ function nodes_formatting(
         ν∂ = [model.ν[k, i, :] for k in ∂]
 
         push!(nodes, Node(i, ∂, model.T, ν∂, obs, model))
-        
     end
+    model.obsmat = nothing
     return collect(nodes)
 end
 
@@ -97,8 +97,8 @@ function nodes_formatting(
         ν∂ = [model.ν[k, i, :] for k in ∂]
 
         push!(nodes, Node(i, ∂, model.T, ν∂, obs, model))
-        
     end
+    model.obsmat = nothing
     return collect(nodes)
 end
 
@@ -110,9 +110,9 @@ function fill_transmat_cav!(
     jnode::Node{SIS,TG},
     jindex::Int,
     sumargexp::SumM,
-    infectionmodel::SIS) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    model::EpidemicModel{SIS,TG}) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
-    @inbounds @fastmath @simd for t in 1:inode.model.T
+    @inbounds @fastmath @simd for t in 1:model.T
         M[1, 1, t] = exp(sumargexp.summ[t] - inode.cavities[jindex].m[t] * inode.νs[jindex][t]) * (1 - infectionmodel.εᵢᵗ[inode.i, t]) * inode.obs[1, t]
         M[1, 2, t] = (1 - exp(sumargexp.summ[t] - inode.cavities[jindex].m[t] * inode.νs[jindex][t]) * (1 - infectionmodel.εᵢᵗ[inode.i, t])) * inode.obs[1, t]
         M[2, 1, t] = infectionmodel.rᵢᵗ[inode.i, t] * exp(sumargexp.sumμ[t] - inode.cavities[jindex].μ[t] * jnode.νs[iindex][t]) * inode.obs[2, t]
@@ -124,9 +124,9 @@ function fill_transmat_marg!(
     M::Array{Float64,3},
     inode::Node{SIS,TG},
     sumargexp::SumM,
-    infectionmodel::SIS) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    model::EpidemicModel{SIS,TG}) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
-    @inbounds @fastmath @simd for t in 1:inode.model.T
+    @inbounds @fastmath @simd for t in 1:model.T
         M[1, 1, t] = exp(sumargexp.summ[t]) * (1 - infectionmodel.εᵢᵗ[inode.i, t]) * inode.obs[1, t]
         M[1, 2, t] = (1 - exp(sumargexp.summ[t]) * (1 - infectionmodel.εᵢᵗ[inode.i, t])) * inode.obs[1, t]
         M[2, 1, t] = infectionmodel.rᵢᵗ[inode.i, t] * exp(sumargexp.sumμ[t]) * inode.obs[2, t]

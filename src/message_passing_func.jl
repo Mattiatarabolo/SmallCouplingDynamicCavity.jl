@@ -5,14 +5,14 @@ function update_single_message!(
     ρ::FBm,
     M::Array{Float64,3},
     damp::Float64,
-    inode::Node{TI,TG},
-    μ_cutoff::Float64) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    μ_cutoff::Float64,
+    model::EpidemicModel{TI,TG}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
     #clear!(newmess)
 
-    @inbounds @fastmath for t in 1:inode.model.T
+    @inbounds @fastmath for t in 1:model.T
         normmess = 0.0
-        @inbounds @fastmath @simd for x in 1:n_states(inode.model.Disease)
+        @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
             normmess += ρ.fwm[x,t] * ρ.bwm[x,t]
         end
         newm = ρ.fwm[2,t] * ρ.bwm[2,t] / normmess
@@ -31,15 +31,15 @@ function update_single_message!(
 
     # t = T+1
     normmess = 0.0
-    @inbounds @fastmath @simd for x in 1:n_states(inode.model.Disease)
-        normmess += ρ.fwm[x,inode.model.T+1] * ρ.bwm[x,inode.model.T+1]
+    @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
+        normmess += ρ.fwm[x,model.T+1] * ρ.bwm[x,model.T+1]
     end
-    newm = ρ.fwm[2,inode.model.T+1] * ρ.bwm[2,inode.model.T+1] / normmess
-    check_mess(newm, 0.0, normmess, inode.model.T+1)
-    newm = jnode.cavities[iindex].m[inode.model.T+1]*damp + newm*(1 - damp)
-    ε = max(ε, abs(newm - jnode.cavities[iindex].m[inode.model.T+1]))
+    newm = ρ.fwm[2,model.T+1] * ρ.bwm[2,model.T+1] / normmess
+    check_mess(newm, 0.0, normmess, model.T+1)
+    newm = jnode.cavities[iindex].m[model.T+1]*damp + newm*(1 - damp)
+    ε = max(ε, abs(newm - jnode.cavities[iindex].m[model.T+1]))
     
-    jnode.cavities[iindex].m[inode.model.T+1] = newm
+    jnode.cavities[iindex].m[model.T+1] = newm
 
     return ε
 end
@@ -54,29 +54,28 @@ function compute_ρ!(
     M::Array{Float64,3},
     ρ::FBm,
     prior::Array{Float64,2},
-    T::Int,
-    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    model::EpidemicModel{TI,TG}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     #clear!(M, ρ)
 
-    @inbounds @fastmath @simd for x in 1:n_states(infectionmodel)
+    @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
         ρ.fwm[x, 1] = prior[x, inode.i]
-        ρ.bwm[x, T+1] = inode.obs[x, T+1]
+        ρ.bwm[x, model.T+1] = inode.obs[x, model.T+1]
     end
 
-    fill_transmat_cav!(M, inode, iindex, jnode, jindex, sumargexp, infectionmodel)
+    fill_transmat_cav!(M, inode, iindex, jnode, jindex, sumargexp, model)
 
     # fwd-bwd update
-    @inbounds @fastmath for t in 1:T
-        @inbounds @fastmath for x1 in 1:n_states(infectionmodel)
+    @inbounds @fastmath for t in 1:model.T
+        @inbounds @fastmath for x1 in 1:n_states(model.Disease)
             ρ.fwm[x1, t+1] = 0.0
-            ρ.bwm[x1, T+1-t] = 0.0
-            @inbounds @fastmath @simd for x2 in 1:n_states(infectionmodel)
+            ρ.bwm[x1, model.T+1-t] = 0.0
+            @inbounds @fastmath @simd for x2 in 1:n_states(model.Disease)
                 ρ.fwm[x1, t+1] += ρ.fwm[x2, t] * M[x2, x1, t]
-                ρ.bwm[x1, T+1-t] += ρ.bwm[x2, T+2-t] * M[x1, x2, T+1-t]
+                ρ.bwm[x1, model.T+1-t] += ρ.bwm[x2, model.T+2-t] * M[x1, x2, model.T+1-t]
             end
         end
-        check_ρ(inode, ρ, M, t, T)
+        check_ρ(inode, ρ, M, t, model.T)
     end
 end
 
@@ -88,33 +87,32 @@ function update_single_marginal!(
     M::Array{Float64, 3}, 
     ρ::FBm, 
     prior::Array{Float64, 2}, 
-    T::Int,
-    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    model::EpidemicModel{TI,TG}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
-    compute_sumargexp!(inode, nodes, sumargexp)
+    compute_sumargexp!(inode, nodes, sumargexp, model)
 
     #clear!(M, ρ)
 
-    @inbounds @fastmath for x in 1:n_states(infectionmodel)
+    @inbounds @fastmath for x in 1:n_states(model.Disease)
         ρ.fwm[x, 1] = prior[x, inode.i]
-        ρ.bwm[x, T+1] = inode.obs[x, T+1]
+        ρ.bwm[x, model.T+1] = inode.obs[x, model.T+1]
     end
 
     fill_transmat_marg!(M, inode, sumargexp, infectionmodel)
 
     # fwd-bwd update
-    @inbounds @fastmath for t in 1:T
-        @inbounds @fastmath for x1 in 1:n_states(infectionmodel)
+    @inbounds @fastmath for t in 1:model.T
+        @inbounds @fastmath for x1 in 1:n_states(model.Disease)
             ρ.fwm[x1, t+1] = 0.0
-            ρ.bwm[x1, T+1-t] = 0.0
-            @inbounds @fastmath @simd for x2 in 1:n_states(infectionmodel)
+            ρ.bwm[x1, model.T+1-t] = 0.0
+            @inbounds @fastmath @simd for x2 in 1:n_states(model.Disease)
                 ρ.fwm[x1, t+1] += ρ.fwm[x2, t] * M[x2, x1, t]
-                ρ.bwm[x1, T+1-t] += ρ.bwm[x2, T+2-t] * M[x1, x2, T+1-t]
+                ρ.bwm[x1, model.T+1-t] += ρ.bwm[x2, model.T+2-t] * M[x1, x2, model.T+1-t]
             end
         end
     end
 
-    @inbounds @fastmath for t in 1:inode.model.T
+    @inbounds @fastmath for t in 1:model.T
         normmarg = 0.0
         @inbounds @fastmath @simd for x in 1:n_states(infectionmodel)
             normmarg += ρ.fwm[x,t] * ρ.bwm[x,t]
@@ -127,10 +125,10 @@ function update_single_marginal!(
     # t = T+1
     normmarg = 0.0
     @inbounds @fastmath @simd for x in 1:n_states(infectionmodel)
-        normmarg += ρ.fwm[x,T+1] * ρ.bwm[x,T+1]
+        normmarg += ρ.fwm[x,model.T+1] * ρ.bwm[x,model.T+1]
     end
     @inbounds @fastmath @simd for x in 1:n_states(infectionmodel)
-        inode.marg.m[x,T+1] = ρ.fwm[x,T+1] * ρ.bwm[x,T+1] / normmarg
+        inode.marg.m[x,T+1] = ρ.fwm[x,model.T+1] * ρ.bwm[x,model.T+1] / normmarg
     end
 end
 
@@ -138,13 +136,14 @@ end
 function compute_sumargexp!(
     inode::Node{TI,TG},
     nodes::Vector{Node{TI,TG}},
-    sumargexp::SumM) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    sumargexp::SumM,
+    model::EpidemicModel{TI,TG}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     clear!(sumargexp)
 
     @inbounds @fastmath for (kindex, k) in enumerate(inode.∂)
         iindex = nodes[k].∂_idx[inode.i]
-        @inbounds @fastmath @simd for t in 1:inode.model.T
+        @inbounds @fastmath @simd for t in 1:model.T
             sumargexp.summ[t] += inode.cavities[kindex].m[t] * inode.νs[kindex][t]  
             sumargexp.sumμ[t] += inode.cavities[kindex].μ[t] * nodes[k].νs[iindex][t]
         end
@@ -160,17 +159,16 @@ function update_node!(
     M::Array{Float64, 3}, 
     ρ::FBm, 
     prior::Array{Float64, 2}, 
-    T::Int,
     damp::Float64,
     μ_cutoff::Float64,
-    infectionmodel::TI) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    model::EpidemicModel{TI,TG}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
-    compute_sumargexp!(inode, nodes, sumargexp)
+    compute_sumargexp!(inode, nodes, sumargexp, model)
 
     for (jindex, j) in enumerate(inode.∂)
         iindex = nodes[j].∂_idx[inode.i]
-        compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, T, infectionmodel)
-        ε = max(ε, update_single_message!(ε, nodes[j], iindex, ρ, M, damp, inode, μ_cutoff))
+        compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model)
+        ε = max(ε, update_single_message!(ε, nodes[j], iindex, ρ, M, damp, μ_cutoff, model))
     end
 
     return ε
@@ -183,16 +181,15 @@ function update_cavities!(
     M::Array{Float64,3},
     ρ::FBm,
     prior::Array{Float64,2},
-    T::Int,
     damp::Float64,
     μ_cutoff::Float64,
-    infectionmodel::TI,
+    model::EpidemicModel{TI,TG},
     rng::AbstractRNG) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     ε = 0.0
 
     for inode in shuffle(rng, nodes)
-        ε = max(ε, update_node!(ε, inode, nodes, sumargexp, M, ρ, prior, T, damp, μ_cutoff, infectionmodel))
+        ε = max(ε, update_node!(ε, inode, nodes, sumargexp, M, ρ, prior, damp, μ_cutoff, model))
     end
 
     return ε
@@ -204,13 +201,12 @@ function compute_marginals!(
     sumargexp::SumM,
     M::Array{Float64,3},
     ρ::FBm, 
-    T::Int64,
     prior::Array{Float64,2},
-    infectionmodel::TI,
+    model::EpidemicModel{TI,TG},
     rng::AbstractRNG) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     for inode in shuffle(rng, nodes)
-        update_single_marginal!(inode, nodes, sumargexp, M, ρ, prior, T, infectionmodel)
+        update_single_marginal!(inode, nodes, sumargexp, M, ρ, prior, model)
     end
 end
 
@@ -282,7 +278,7 @@ function run_SCDC(
 
     # Iteratively update cavity messages until convergence or maximum iterations reached
     for iter = 1:maxiter
-        ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, damp, μ_cutoff, model.Disease, rng)
+        ε = update_cavities!(nodes, sumargexp, M, ρ, prior, damp, μ_cutoff, model, rng)
         callback(nodes, iter, ε)
 
         # Check for convergence
@@ -301,10 +297,10 @@ function run_SCDC(
         for _ in 1:n_iter_nc
             # compute average messages
             for inode in shuffle(rng, nodes)
-                compute_sumargexp!(inode, nodes, sumargexp)
+                compute_sumargexp!(inode, nodes, sumargexp, model)
                 for (jindex, j) in enumerate(inode.∂)
                     iindex = nodes[j].∂_idx[inode.i]
-                    compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model.T, model.Disease)
+                    compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model)
                     #clear!(newmess)
                     @inbounds @fastmath for t in 1:model.T
                         norm = 0.0
@@ -346,7 +342,7 @@ function run_SCDC(
     end
 
     # Compute final marginal probabilities
-    compute_marginals!(nodes, sumargexp, M, ρ, model.T, prior, model.Disease, rng)
+    compute_marginals!(nodes, sumargexp, M, ρ, prior, model, rng)
 
     return nodes
 end
@@ -428,7 +424,7 @@ function run_SCDC(
     check_convergence = false
     for (mi, d) in Iterators.zip(maxiter, damp)
         for _ in 1:mi
-            ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, d, μ_cutoff, model.Disease, rng)
+            ε = update_cavities!(nodes, sumargexp, M, ρ, prior, d, μ_cutoff, model, rng)
             iter += 1
             callback(nodes, iter, ε)
             
@@ -454,10 +450,10 @@ function run_SCDC(
         for _ in 1:n_iter_nc
             # compute average messages
             for inode in shuffle(rng, nodes)
-                compute_sumargexp!(inode, nodes, sumargexp)
+                compute_sumargexp!(inode, nodes, sumargexp, model)
                 for (jindex, j) in enumerate(inode.∂)
                     iindex = nodes[j].∂_idx[inode.i]
-                    compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model.T, model.Disease)
+                    compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model)
                     #clear!(newmess)
                     @inbounds @fastmath for t in 1:model.T
                         norm = 0.0
@@ -499,7 +495,7 @@ function run_SCDC(
     end
 
     # Compute final marginal probabilities
-    compute_marginals!(nodes, sumargexp, M, ρ, model.T, prior, model.Disease, rng)
+    compute_marginals!(nodes, sumargexp, M, ρ, prior, model, rng)
 
     return nodes
 end
@@ -567,7 +563,7 @@ function run_SCDC!(
 
     # Iteratively update cavity messages until convergence or maximum iterations reached
     for iter = 1:maxiter
-        ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, damp, μ_cutoff, model.Disease, rng)
+        ε = update_cavities!(nodes, sumargexp, M, ρ, prior, damp, μ_cutoff, model, rng)
         callback(nodes, iter, ε)
 
         # Check for convergence
@@ -586,10 +582,10 @@ function run_SCDC!(
         for _ in 1:n_iter_nc
             # compute average messages
             for inode in shuffle(rng, nodes)
-                compute_sumargexp!(inode, nodes, sumargexp)
+                compute_sumargexp!(inode, nodes, sumargexp, model)
                 for (jindex, j) in enumerate(inode.∂)
                     iindex = nodes[j].∂_idx[inode.i]
-                    compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model.T, model.Disease)
+                    compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model)
                     #clear!(newmess)
                     @inbounds @fastmath for t in 1:model.T
                         norm = 0.0
@@ -631,7 +627,7 @@ function run_SCDC!(
     end
 
     # Compute final marginal probabilities
-    compute_marginals!(nodes, sumargexp, M, ρ, model.T, prior, model.Disease, rng)
+    compute_marginals!(nodes, sumargexp, M, ρ, prior, model, rng)
 end
 
 
@@ -695,7 +691,7 @@ function run_SCDC!(
     check_convergence = false
     for (mi, d) in Iterators.zip(maxiter, damp)
         for _ in 1:mi
-            ε = update_cavities!(nodes, sumargexp, M, ρ, prior, model.T, damp, μ_cutoff, model.Disease, rng)
+            ε = update_cavities!(nodes, sumargexp, M, ρ, prior, damp, μ_cutoff, model, rng)
             iter += 1
             callback(nodes, iter, ε)
             
@@ -721,10 +717,10 @@ function run_SCDC!(
         for _ in 1:n_iter_nc
             # compute average messages
             for inode in shuffle(rng, nodes)
-                compute_sumargexp!(inode, nodes, sumargexp)
+                compute_sumargexp!(inode, nodes, sumargexp, model)
                 for (jindex, j) in enumerate(inode.∂)
                     iindex = nodes[j].∂_idx[inode.i]
-                    compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model.T, model.Disease)
+                    compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model)
                     #clear!(newmess)
                     @inbounds @fastmath for t in 1:model.T
                         norm = 0.0
@@ -766,5 +762,5 @@ function run_SCDC!(
     end
 
     # Compute final marginal probabilities
-    compute_marginals!(nodes, sumargexp, M, ρ, model.T, prior, model.Disease, rng)
+    compute_marginals!(nodes, sumargexp, M, ρ, prior, model, rng)
 end
