@@ -46,55 +46,55 @@ mc23 = ones(T+1)/2
 @testset "internalSI" begin
     # i=1
     inode = nodes[1]
-    SmallCouplingDynamicCavity.compute_sumargexp!(inode, nodes, sumargexp)
+    SmallCouplingDynamicCavity.compute_sumargexp!(inode, nodes, sumargexp, model)
         # j = 2
         jindex = 1
         jnode = nodes[2]
         iindex = jnode.∂_idx[inode.i]
-        SmallCouplingDynamicCavity.compute_ρ!(inode, iindex, jnode, jindex, sumargexp, M, ρ, prior, T, infectionmodel)
+        SmallCouplingDynamicCavity.compute_ρ!(inode, iindex, jnode, jindex, sumargexp, M, ρ, prior, model)
         @test M ≈ Mc1
         @test ρ.fwm ≈ ρc1fwm
         @test ρ.bwm ≈ ρcbwm
-        SmallCouplingDynamicCavity.update_single_message!(0.0, jnode, iindex, ρ, M, 0.0, inode, -Inf)
+        SmallCouplingDynamicCavity.update_single_message!(0.0, jnode, iindex, ρ, M, 0.0, -Inf, model)
         @test jnode.cavities[iindex].m ≈ mc1
         @test jnode.cavities[iindex].μ ≈ μc
         # j = 3
         jindex = 2
         jnode = nodes[3]
         iindex = jnode.∂_idx[inode.i]
-        SmallCouplingDynamicCavity.compute_ρ!(inode, iindex, jnode, jindex, sumargexp, M, ρ, prior, T, infectionmodel)
+        SmallCouplingDynamicCavity.compute_ρ!(inode, iindex, jnode, jindex, sumargexp, M, ρ, prior, model)
         @test M ≈ Mc1
         @test ρ.fwm ≈ ρc1fwm
         @test ρ.bwm ≈ ρcbwm
-        SmallCouplingDynamicCavity.update_single_message!(0.0, jnode, iindex, ρ, M, 0.0, inode, -Inf)
+        SmallCouplingDynamicCavity.update_single_message!(0.0, jnode, iindex, ρ, M, 0.0, -Inf, model)
         @test jnode.cavities[iindex].m ≈ mc1
         @test jnode.cavities[iindex].μ ≈ μc
     # i=2
     inode = nodes[2]
-    SmallCouplingDynamicCavity.compute_sumargexp!(inode, nodes, sumargexp)
+    SmallCouplingDynamicCavity.compute_sumargexp!(inode, nodes, sumargexp, model)
         # j = 1
         jindex = 1
         jnode = nodes[1]
         iindex = jnode.∂_idx[inode.i]
-        SmallCouplingDynamicCavity.compute_ρ!(inode, iindex, jnode, jindex, sumargexp, M, ρ, prior, T, infectionmodel)
+        SmallCouplingDynamicCavity.compute_ρ!(inode, iindex, jnode, jindex, sumargexp, M, ρ, prior, model)
         @test M ≈ Mc23
         @test ρ.fwm ≈ ρc23fwm
         @test ρ.bwm ≈ ρcbwm
-        SmallCouplingDynamicCavity.update_single_message!(0.0, jnode, iindex, ρ, M, 0.0, inode, -Inf)
+        SmallCouplingDynamicCavity.update_single_message!(0.0, jnode, iindex, ρ, M, 0.0, -Inf, model)
         @test jnode.cavities[iindex].m ≈ mc23
         @test jnode.cavities[iindex].μ ≈ μc
     # i=3
     inode = nodes[3]
-    SmallCouplingDynamicCavity.compute_sumargexp!(inode, nodes, sumargexp)
+    SmallCouplingDynamicCavity.compute_sumargexp!(inode, nodes, sumargexp, model)
         # j = 1
         jindex = 1
         jnode = nodes[1]
         iindex = jnode.∂_idx[inode.i]
-        SmallCouplingDynamicCavity.compute_ρ!(inode, iindex, jnode, jindex, sumargexp, M, ρ, prior, T, infectionmodel)
+        SmallCouplingDynamicCavity.compute_ρ!(inode, iindex, jnode, jindex, sumargexp, M, ρ, prior, model)
         @test M ≈ Mc23
         @test ρ.fwm ≈ ρc23fwm
         @test ρ.bwm ≈ ρcbwm
-        SmallCouplingDynamicCavity.update_single_message!(0.0, jnode, iindex, ρ, M, 0.0, inode, -Inf)
+        SmallCouplingDynamicCavity.update_single_message!(0.0, jnode, iindex, ρ, M, 0.0, -Inf, model)
         @test jnode.cavities[iindex].m ≈ mc23
         @test jnode.cavities[iindex].μ ≈ μc
 end

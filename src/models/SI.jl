@@ -102,8 +102,8 @@ function fill_transmat_cav!(
     model::EpidemicModel{SI,TG}) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
     @inbounds @fastmath @simd for t in 1:model.T
-        M[1, 1, t] = (exp(sumargexp.summ[t] - inode.cavities[jindex].m[t] * inode.νs[jindex][t]) * (1 - infectionmodel.εᵢᵗ[inode.i, t])) * inode.obs[1, t]
-        M[1, 2, t] = (1 - exp(sumargexp.summ[t] - inode.cavities[jindex].m[t] * inode.νs[jindex][t]) * (1 - infectionmodel.εᵢᵗ[inode.i, t])) * inode.obs[1, t]
+        M[1, 1, t] = (exp(sumargexp.summ[t] - inode.cavities[jindex].m[t] * inode.νs[jindex][t]) * (1 - model.Disease.εᵢᵗ[inode.i, t])) * inode.obs[1, t]
+        M[1, 2, t] = (1 - exp(sumargexp.summ[t] - inode.cavities[jindex].m[t] * inode.νs[jindex][t]) * (1 - model.Disease.εᵢᵗ[inode.i, t])) * inode.obs[1, t]
         M[2, 2, t] = exp(sumargexp.sumμ[t] - inode.cavities[jindex].μ[t] * jnode.νs[iindex][t]) * inode.obs[2, t]
     end
 end
@@ -115,8 +115,8 @@ function fill_transmat_marg!(
     model::EpidemicModel{SI,TG}) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
     @inbounds @fastmath @simd for t in 1:model.T
-        M[1, 1, t] = (exp(sumargexp.summ[t]) * (1 - infectionmodel.εᵢᵗ[inode.i, t])) * inode.obs[1, t]
-        M[1, 2, t] = (1 - exp(sumargexp.summ[t]) * (1 - infectionmodel.εᵢᵗ[inode.i, t])) * inode.obs[1, t]
+        M[1, 1, t] = (exp(sumargexp.summ[t]) * (1 - model.Disease.εᵢᵗ[inode.i, t])) * inode.obs[1, t]
+        M[1, 2, t] = (1 - exp(sumargexp.summ[t]) * (1 - model.Disease.εᵢᵗ[inode.i, t])) * inode.obs[1, t]
         M[2, 2, t] = exp(sumargexp.sumμ[t]) * inode.obs[2, t]
     end
 end

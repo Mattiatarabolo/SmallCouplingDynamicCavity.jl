@@ -98,7 +98,7 @@ function update_single_marginal!(
         ρ.bwm[x, model.T+1] = inode.obs[x, model.T+1]
     end
 
-    fill_transmat_marg!(M, inode, sumargexp, infectionmodel)
+    fill_transmat_marg!(M, inode, sumargexp, model)
 
     # fwd-bwd update
     @inbounds @fastmath for t in 1:model.T
@@ -114,21 +114,21 @@ function update_single_marginal!(
 
     @inbounds @fastmath for t in 1:model.T
         normmarg = 0.0
-        @inbounds @fastmath @simd for x in 1:n_states(infectionmodel)
+        @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
             normmarg += ρ.fwm[x,t] * ρ.bwm[x,t]
         end
-        @inbounds @fastmath @simd for x in 1:n_states(infectionmodel)
+        @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
             inode.marg.m[x,t] = ρ.fwm[x,t] * ρ.bwm[x,t] / normmarg
         end
     end
 
     # t = T+1
     normmarg = 0.0
-    @inbounds @fastmath @simd for x in 1:n_states(infectionmodel)
+    @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
         normmarg += ρ.fwm[x,model.T+1] * ρ.bwm[x,model.T+1]
     end
-    @inbounds @fastmath @simd for x in 1:n_states(infectionmodel)
-        inode.marg.m[x,T+1] = ρ.fwm[x,model.T+1] * ρ.bwm[x,model.T+1] / normmarg
+    @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
+        inode.marg.m[x,model.T+1] = ρ.fwm[x,model.T+1] * ρ.bwm[x,model.T+1] / normmarg
     end
 end
 
