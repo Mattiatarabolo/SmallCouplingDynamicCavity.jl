@@ -74,7 +74,6 @@ function nodes_formatting(
 
         push!(nodes, Node(i, ∂, model.T, ν∂, obs, model))
     end
-    model.obsmat = nothing
     return collect(nodes)
 end
 
@@ -103,7 +102,6 @@ function nodes_formatting(
 
         push!(nodes, Node(i, ∂, model.T, ν∂, obs, model))
     end
-    model.obsmat = nothing
     return collect(nodes)
 end
 
