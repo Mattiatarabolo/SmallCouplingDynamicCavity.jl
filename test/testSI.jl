@@ -108,8 +108,8 @@ NV = 10 # number of graph vertices
 k = 3 # average degree
 
 #genrate an Erdos-Renyi random graph with average connectivity k
-Random.seed!(1)
-G = erdos_renyi(NV, k/NV)
+rng = Xoshiro(1)
+G = erdos_renyi(NV, k/NV, rng=rng)
 
 # define the constants
 T = 5 # total time
@@ -155,15 +155,15 @@ damp = 0.1 # damping factor
 
 @testset "SimSI" begin
     # epidemic simulation
-    Random.seed!(3)
-    config = sim_epidemics(model, patient_zero=[1])
+    Random.seed!(rng, 3)
+    config = sim_epidemics(model, patient_zero=[1], rng=rng)
 
-    @test config ≈ configtest
+    @test config == configtest
 end
 
 @testset "inferenceSI" begin
-    Random.seed!(1)
-    nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff)
+    Random.seed!(rng, 1)
+    nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff, rng=rng)
 
     marg = zeros(NV,2,T+1)
     for (i,node) in enumerate(nodes)
@@ -178,8 +178,8 @@ end
     maxiter = [90, 50]  # max number of iterations scheme
     damp = [0.9, 0.5]  # damping factor scheme
 
-    Random.seed!(1)
-    nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff)
+    Random.seed!(rng, 1)
+    nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff, rng=rng)
 
     marg = zeros(NV,2,T+1)
     for (i,node) in enumerate(nodes)

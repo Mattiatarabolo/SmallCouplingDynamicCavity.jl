@@ -2,8 +2,8 @@ NV = 10 # number of graph vertices
 k = 3 # average degree
 
 #genrate an Erdos-Renyi random graph with average connectivity k
-Random.seed!(1)
-G = erdos_renyi(NV, k/NV)
+rng = Xoshiro(1)
+G = erdos_renyi(NV, k/NV, rng=rng)
 
 # define the constants
 T = 5 # total time
@@ -54,15 +54,15 @@ margtest = load("data/margSIRS.jld2", "marg")
 
 @testset "SimSIRS" begin
     # epidemic simulation
-    Random.seed!(6)
-    config = sim_epidemics(model, patient_zero=[1])
+    Random.seed!(rng, 6)
+    config = sim_epidemics(model, patient_zero=[1], rng=rng)
 
     @test config ≈ configtest
 end
 
 @testset "inferenceSIRS" begin
-    Random.seed!(1)
-    nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff=μ_cutoff, n_iter_nc=100, damp_nc=0.1)
+    Random.seed!(rng, 1)
+    nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff=μ_cutoff, n_iter_nc=100, damp_nc=0.1, rng=rng)
 
     marg = zeros(NV,3,T+1)
     for (i,node) in enumerate(nodes)
@@ -77,8 +77,8 @@ end
     maxiter = [400, 300]  # max number of iterations scheme
     damp = [0.9, 0.5]  # damping factor scheme
 
-    Random.seed!(1)
-    nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff)
+    Random.seed!(rng, 1)
+    nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff, rng=rng)
 
     marg = zeros(NV,3,T+1)
     for (i,node) in enumerate(nodes)

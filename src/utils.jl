@@ -1,18 +1,3 @@
-function clear!(
-    M::Array{Float64,3}, 
-    ρ::FBm)
-    fill!(M, 0.0)
-    fill!(ρ.fwm, 0.0)
-    fill!(ρ.bwm, 0.0)
-end
-
-function clear!( 
-    newmess::Message)
-
-    fill!(newmess.m, 0.0)
-    fill!(newmess.μ, 0.0)
-end
-
 function clear!(SumM::SumM)
     fill!(SumM.summ, 0.0)
     fill!(SumM.sumμ, 0.0)
@@ -20,14 +5,14 @@ end
 
 
 """
-    bethe_lattice(z::Int, tmax::Int, startfrom1::Bool)
+    bethe_lattice(z::Int, tmax::Int, root1::Bool)
 
 Generate a Bethe lattice (tree) with a specified degree and depth.
 
 # Arguments
 - `z::Int`: The degree of the Bethe lattice.
 - `tmax::Int`: The maximum depth of the Bethe lattice.
-- `startfrom1::Bool`: If `true`, the center of the tree is vertex 1.
+- `root1::Bool`: If `true`, the root/center of the tree is vertex 1.
 
 # Returns
 - `V::Vector{Int}`: A list of vertices in the Bethe lattice.
@@ -36,11 +21,11 @@ Generate a Bethe lattice (tree) with a specified degree and depth.
 # Description
 This function generates a Bethe lattice (tree) with a specified degree (`z`) and maximum depth (`tmax`). The Bethe lattice is constructed by iteratively adding nodes and edges according to the specified parameters.
 
-If `startfrom1` is `true`, the center of the tree is vertex 1. Otherwise, the tree is constructed starting from vertex 0.
+If `root1` is `true`, the root/center of the tree is vertex 1. Otherwise, the tree is constructed starting from vertex 0.
 
 The function returns a tuple where the first element (`V`) is a list of vertices, and the second element (`E`) is a list of edges in the Bethe lattice.
 """
-function bethe_lattice(z::Int, tmax::Int, startfrom1::Bool)
+function bethe_lattice(z::Int, tmax::Int; root1::Bool=false)
     # Trivial case of tmax = 0, return only 1 node and an empty set of edges
     tmax == 0 && return V = [0], Vector{Vector{Int}}(undef, 0)
 
@@ -62,8 +47,8 @@ function bethe_lattice(z::Int, tmax::Int, startfrom1::Bool)
         leaves = copy(newnodes)
     end
 
-    startfrom1 && return V .+ ones(Int, length(V)), E .+ [ones(Int, 2) for _ = 1:length(E)]
-    !startfrom1 && return V, E
+    root1 && return V .+ ones(Int, length(V)), E .+ [ones(Int, 2) for _ = 1:length(E)]
+    !root1 && return V, E
 end
 
 

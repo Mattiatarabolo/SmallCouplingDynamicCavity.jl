@@ -133,6 +133,7 @@ Simulates an epidemic outbreak using the SI (Susceptible-Infectious) model.
 - `model`: The SI epidemic model, encapsulating information about the infection dynamics, contact graph, and other parameters.
 - `patient_zero`: (Optional) A vector specifying the indices of initial infected individuals. If not provided (default `nothing`), patient zero is selected randomly based on the probability `γ`.
 - `γ`: (Optional) The probability of being a patient zero. If `patient_zero` is not specified and `γ` is provided, patient zero is chosen randomly with probability `γ`. If both `patient_zero` and `γ` are not provided (default `nothing`), patient zero is selected randomly with equal probability for each individual.
+- `rng`: (Optional) A random number generator. Default is `Xoshiro(1234)`.
 
 # Returns
 - A matrix representing the epidemic outbreak configuration over time. Each row corresponds to a node, and each column represents a time step. The values in the matrix indicate the state of each node at each time step: 0.0 for Susceptible (S) and 1.0 for Infected (I).
@@ -140,18 +141,19 @@ Simulates an epidemic outbreak using the SI (Susceptible-Infectious) model.
 function sim_epidemics(
     model::EpidemicModel{SI,TG};
     patient_zero::Union{Vector{Int},Nothing}=nothing,
-    γ::Union{Float64,Nothing}=nothing) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    γ::Union{Float64,Nothing}=nothing,
+    rng::AbstractRNG=Xoshiro(1234)) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     inf₀ = false
     if patient_zero === nothing && γ !== nothing
         while !inf₀
-            patient_zero = rand(Binomial(1,γ), model.N)
+            patient_zero = rand(rng, Binomial(1,γ), model.N)
             patient_zero = findall(x->x==1, patient_zero)
             inf₀ = !isempty(patient_zero)
         end
     elseif patient_zero === nothing && γ === nothing
         while !inf₀
-            patient_zero = rand(Binomial(1,1/model.N), model.N)
+            patient_zero = rand(rng, Binomial(1,1/model.N), model.N)
             patient_zero = findall(x->x==1, patient_zero)
             inf₀ = !isempty(patient_zero)
         end
@@ -164,7 +166,7 @@ function sim_epidemics(
     hs = zeros(model.N)
     for t in 1:model.T
         hs = config[:, t]' * model.ν[:, :, t]
-        config[:, t+1] = [x + (1 - x) * rand(Bernoulli(1 - exp(h))) for (x, h) in zip(config[:, t], hs)]
+        config[:, t+1] = [x + (1 - x) * rand(rng, Bernoulli(1 - exp(h))) for (x, h) in zip(config[:, t], hs)]
     end
     return config
 end

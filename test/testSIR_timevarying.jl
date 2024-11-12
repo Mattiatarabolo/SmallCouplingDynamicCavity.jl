@@ -12,13 +12,13 @@ G = Vector{SimpleGraph{Int64}}()
 λ = zeros(NV, NV, T)
 
 #genrate Erdos-Renyi random graphs with average connectivity k
-Random.seed!(1)
+rng = Xoshiro(1)
 for t in 1:T
-    g = erdos_renyi(NV, k/NV)
+    g = erdos_renyi(NV, k/NV, rng=rng)
     push!(G,g)
     for e in edges(g)
-        λ[src(e), dst(e), t] = rand() * λ₀
-        λ[dst(e), src(e), t] = rand() * λ₀
+        λ[src(e), dst(e), t] = rand(rng) * λ₀
+        λ[dst(e), src(e), t] = rand(rng) * λ₀
     end
 end
 
@@ -56,15 +56,15 @@ margtest = load("data/margSIR_timevarying.jld2", "marg")
 
 @testset "SimSIR_timevarying" begin
     # epidemic simulation
-    Random.seed!(3)
-    config = sim_epidemics(model, patient_zero=[1])
+    Random.seed!(rng, 3)
+    config = sim_epidemics(model, patient_zero=[1], rng=rng)
 
     @test config ≈ configtest
 end
 
 @testset "inferenceSIR_timevarying" begin
-    Random.seed!(1)
-    nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff)
+    Random.seed!(rng, 1)
+    nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff, rng=rng)
 
     marg = zeros(NV,3,T+1)
     for (i,node) in enumerate(nodes)
@@ -79,8 +79,8 @@ end
     maxiter = [100, 90]  # max number of iterations scheme
     damp = [0.9, 0.5]  # damping factor scheme
 
-    Random.seed!(1)
-    nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff)
+    Random.seed!(rng, 1)
+    nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff, rng=rng)
 
     marg = zeros(NV,3,T+1)
     for (i,node) in enumerate(nodes)

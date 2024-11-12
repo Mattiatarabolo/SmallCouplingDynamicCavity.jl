@@ -7,8 +7,6 @@ function update_single_message!(
     damp::Float64,
     μ_cutoff::Float64,
     model::EpidemicModel{TI,TG}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
-    
-    #clear!(newmess)
 
     @inbounds @fastmath for t in 1:model.T
         normmess = 0.0
@@ -56,8 +54,6 @@ function compute_ρ!(
     prior::Array{Float64,2},
     model::EpidemicModel{TI,TG}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
-    #clear!(M, ρ)
-
     @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
         ρ.fwm[x, 1] = prior[x, inode.i]
         ρ.bwm[x, model.T+1] = inode.obs[x, model.T+1]
@@ -90,8 +86,6 @@ function update_single_marginal!(
     model::EpidemicModel{TI,TG}) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     
     compute_sumargexp!(inode, nodes, sumargexp, model)
-
-    #clear!(M, ρ)
 
     @inbounds @fastmath for x in 1:n_states(model.Disease)
         ρ.fwm[x, 1] = prior[x, inode.i]
@@ -301,7 +295,6 @@ function run_SCDC(
                 for (jindex, j) in enumerate(inode.∂)
                     iindex = nodes[j].∂_idx[inode.i]
                     compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model)
-                    #clear!(newmess)
                     @inbounds @fastmath for t in 1:model.T
                         norm = 0.0
                         @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
@@ -454,7 +447,6 @@ function run_SCDC(
                 for (jindex, j) in enumerate(inode.∂)
                     iindex = nodes[j].∂_idx[inode.i]
                     compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model)
-                    #clear!(newmess)
                     @inbounds @fastmath for t in 1:model.T
                         norm = 0.0
                         @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
@@ -586,7 +578,6 @@ function run_SCDC!(
                 for (jindex, j) in enumerate(inode.∂)
                     iindex = nodes[j].∂_idx[inode.i]
                     compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model)
-                    #clear!(newmess)
                     @inbounds @fastmath for t in 1:model.T
                         norm = 0.0
                         @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
@@ -721,7 +712,6 @@ function run_SCDC!(
                 for (jindex, j) in enumerate(inode.∂)
                     iindex = nodes[j].∂_idx[inode.i]
                     compute_ρ!(inode, iindex, nodes[j], jindex, sumargexp, M, ρ, prior, model)
-                    #clear!(newmess)
                     @inbounds @fastmath for t in 1:model.T
                         norm = 0.0
                         @inbounds @fastmath @simd for x in 1:n_states(model.Disease)
