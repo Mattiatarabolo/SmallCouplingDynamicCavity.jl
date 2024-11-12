@@ -12,7 +12,6 @@ Generate a Bethe lattice (tree) with a specified degree and depth.
 # Arguments
 - `z::Int`: The degree of the Bethe lattice.
 - `tmax::Int`: The maximum depth of the Bethe lattice.
-- `root1::Bool`: If `true`, the root/center of the tree is vertex 1.
 
 # Returns
 - `V::Vector{Int}`: A list of vertices in the Bethe lattice.
@@ -25,30 +24,36 @@ If `root1` is `true`, the root/center of the tree is vertex 1. Otherwise, the tr
 
 The function returns a tuple where the first element (`V`) is a list of vertices, and the second element (`E`) is a list of edges in the Bethe lattice.
 """
-function bethe_lattice(z::Int, tmax::Int; root1::Bool=false)
-    # Trivial case of tmax = 0, return only 1 node and an empty set of edges
-    tmax == 0 && return V = [0], Vector{Vector{Int}}(undef, 0)
-
-    V = collect(0:z)
-    E = collect([[0, i] for i=1:z])
-    tmax == 1 && return V, E
-    shell_nodes(t) = z * (z - 1)^(t - 1)
-    leaves = V[2:end]
-
-    for t = 2:tmax
-        Nt = shell_nodes(t)
-        newnodes = collect(V[end] + 1:V[end] + Nt)
-        append!(V, newnodes)
-        nleaves = length(leaves)
-        for j = 1:nleaves
-            newedges = collect([[leaves[j], newnodes[k]] for k = 1 + (z - 1) * (j - 1):(z - 1) * j])
-            append!(E, newedges)
+function bethe_lattice(z::Int, tmax::Int)
+    @assert z > 1 "Degree z must be greater than 1."
+    @assert tmax >= 1 "Maximum depth tmax must be at least 1."
+    
+    # Initialize vertex and edge lists
+    V = [1]  # Start with root node as vertex 1
+    E = Vector{Vector{Int}}()
+    
+    # Helper function to recursively add vertices and edges
+    function add_children(node, depth, next_vertex)
+        if depth > tmax
+            return next_vertex  # Stop if max depth is reached
         end
-        leaves = copy(newnodes)
-    end
+        children_count = z - 1  # Number of children each node has, except root
+        if node == 1 children_count = z end  # Root has z children
 
-    root1 && return V .+ ones(Int, length(V)), E .+ [ones(Int, 2) for _ = 1:length(E)]
-    !root1 && return V, E
+        for i in 1:children_count
+            next_vertex += 1  # Increment to get new vertex
+            push!(V, next_vertex)
+            push!(E, [node, next_vertex])
+            # Recurse to add children of this new node
+            next_vertex = add_children(next_vertex, depth + 1, next_vertex)
+        end
+        return next_vertex
+    end
+    
+    # Start recursion from the root node at depth 1
+    add_children(1, 1, 1)
+    
+    return V, E
 end
 
 
