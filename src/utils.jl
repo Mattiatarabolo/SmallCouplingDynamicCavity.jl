@@ -5,7 +5,7 @@ end
 
 
 """
-    bethe_lattice(z::Int, tmax::Int, root1::Bool)
+    bethe_lattice(z::Int, tmax::Int)
 
 Generate a Bethe lattice (tree) with a specified degree and depth.
 
@@ -18,9 +18,7 @@ Generate a Bethe lattice (tree) with a specified degree and depth.
 - `E::Vector{Vector{Int}}`: A list of edges in the Bethe lattice.
 
 # Description
-This function generates a Bethe lattice (tree) with a specified degree (`z`) and maximum depth (`tmax`). The Bethe lattice is constructed by iteratively adding nodes and edges according to the specified parameters.
-
-If `root1` is `true`, the root/center of the tree is vertex 1. Otherwise, the tree is constructed starting from vertex 0.
+This function generates a Bethe lattice (tree) with a specified degree (`z`) and maximum depth (`tmax`). The Bethe lattice is constructed by iteratively adding nodes and edges according to the specified parameters. The root node is always assigned vertex number 1, and the vertices are numbered in a depth-first manner. The edges are stored as a list of pairs of vertices, where each pair represents an edge between two vertices.
 
 The function returns a tuple where the first element (`V`) is a list of vertices, and the second element (`E`) is a list of edges in the Bethe lattice.
 """
@@ -40,7 +38,7 @@ function bethe_lattice(z::Int, tmax::Int)
         children_count = z - 1  # Number of children each node has, except root
         if node == 1 children_count = z end  # Root has z children
 
-        for i in 1:children_count
+        for _ in 1:children_count
             next_vertex += 1  # Increment to get new vertex
             push!(V, next_vertex)
             push!(E, [node, next_vertex])
@@ -135,10 +133,4 @@ function check_ρ(inode::Node{TI,TG}, ρ::FBm, M::Array{Float64,3}, t::Int, T::I
     if !isfinite(ρ.fwm[1,t+1]) || !isfinite(ρ.fwm[2,t+1]) || !isfinite(ρ.bwm[1,T+1-t]) || !isfinite(ρ.bwm[2,T+1-t]) 
         throw(DomainError("NaN evaluated when computing ρ!"))
     end
-
-    #=
-    if ρ.fwm[:,t+1]==[0.0,0.0] || ρ.bwm[:,T+1-t]==[0.0,0.0]
-        throw(DomainError("0.0 evaluated when computing ρ!"))
-    end
-    =#
 end
