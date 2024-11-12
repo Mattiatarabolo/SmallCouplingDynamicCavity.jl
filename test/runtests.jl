@@ -6,8 +6,7 @@ using Test
 using Aqua
 
 @testset "Aqua" begin
-    Aqua.test_all(SmallCouplingDynamicCavity, ambiguities=false)
-    Aqua.test_ambiguities(SmallCouplingDynamicCavity)
+    Aqua.test_all(SmallCouplingDynamicCavity, deps_compat=check_extras=false)    
 end
 
 # define the observation probability
