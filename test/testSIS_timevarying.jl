@@ -76,12 +76,26 @@ end
     @test marg ≈ margtest
 end
 
+########### checking averaging method when non-converged ##########
+n_iter_nc = 10
+damp_nc = 0.3
+@testset "inferenceSIS_timevarying_nc" begin
+    Random.seed!(rng, 1)
+    nodes_nc = run_SCDC(model, obsprob, γ, 2, epsconv, damp, μ_cutoff=μ_cutoff, n_iter_nc=n_iter_nc, damp_nc=damp_nc, rng=rng)
+    Random.seed!(rng, 1)
+    nodes = run_SCDC(model, obsprob, γ, 2, epsconv, damp, μ_cutoff=μ_cutoff, rng=rng)
+    run_SCDC!(nodes, model, γ, 0, epsconv, damp, μ_cutoff=μ_cutoff, n_iter_nc=n_iter_nc, damp_nc=damp_nc, rng=rng)
 
+    marg = [node.marg.m[2,T+1] for node in nodes]
+    marg_nc = [node.marg.m[2,T+1] for node in nodes_nc]
 
-@testset "inferenceSIscheme" begin
-    maxiter = [90, 50]  # max number of iterations scheme
-    damp = [0.9, 0.5]  # damping factor scheme
+    @test marg ≈ marg_nc
+end
 
+############## Test SIS model with damping scheme ##############
+maxiter = [90, 50]  # max number of iterations scheme
+damp = [0.9, 0.5]  # damping factor scheme
+@testset "inferenceSISscheme" begin
     Random.seed!(rng, 1)
     nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff, rng=rng)
 
@@ -92,4 +106,20 @@ end
 
     margtestscheme = load("data/margSISscheme_timevarying.jld2", "marg")
     @test marg ≈ margtestscheme
+end
+
+########### checking averaging method when non-converged with damping scheme ##########
+n_iter_nc = 10
+damp_nc = 0.3
+@testset "inferenceSISscheme_timevarying_nc" begin
+    Random.seed!(rng, 1)
+    nodes_nc = run_SCDC(model, obsprob, γ, [2,2], epsconv, damp, μ_cutoff=μ_cutoff, n_iter_nc=n_iter_nc, damp_nc=damp_nc, rng=rng)
+    Random.seed!(rng, 1)
+    nodes = run_SCDC(model, obsprob, γ, [2,2], epsconv, damp, μ_cutoff=μ_cutoff, rng=rng)
+    run_SCDC!(nodes, model, γ, [0,0], epsconv, damp, μ_cutoff=μ_cutoff, n_iter_nc=n_iter_nc, damp_nc=damp_nc, rng=rng)
+
+    marg = [node.marg.m[2,T+1] for node in nodes]
+    marg_nc = [node.marg.m[2,T+1] for node in nodes_nc]
+
+    @test marg ≈ marg_nc
 end

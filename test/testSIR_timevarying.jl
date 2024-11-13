@@ -74,11 +74,27 @@ end
     @test marg ≈ margtest
 end
 
+########### checking averaging method when non-converged ##########
+n_iter_nc = 10
+damp_nc = 0.3
 
-@testset "inferenceSIscheme" begin
-    maxiter = [100, 90]  # max number of iterations scheme
-    damp = [0.9, 0.5]  # damping factor scheme
+@testset "inferenceSIR_timevarying_nc" begin
+    Random.seed!(rng, 1)
+    nodes_nc = run_SCDC(model, obsprob, γ, 2, epsconv, damp, μ_cutoff=μ_cutoff, n_iter_nc=n_iter_nc, damp_nc=damp_nc, rng=rng)
+    Random.seed!(rng, 1)
+    nodes = run_SCDC(model, obsprob, γ, 2, epsconv, damp, μ_cutoff=μ_cutoff, rng=rng)
+    run_SCDC!(nodes, model, γ, 0, epsconv, damp, μ_cutoff=μ_cutoff, n_iter_nc=n_iter_nc, damp_nc=damp_nc, rng=rng)
 
+    marg = [node.marg.m[2,T+1] for node in nodes]
+    marg_nc = [node.marg.m[2,T+1] for node in nodes_nc]
+
+    @test marg ≈ marg_nc
+end
+
+############ checking averaging method when non-converged with damping scheme ##########
+maxiter = [100, 90]  # max number of iterations scheme
+damp = [0.9, 0.5]  # damping factor scheme
+@testset "inferenceSIRscheme_timevarying" begin
     Random.seed!(rng, 1)
     nodes = run_SCDC(model, obsprob, γ, maxiter, epsconv, damp, μ_cutoff = μ_cutoff, rng=rng)
 
@@ -89,4 +105,21 @@ end
 
     margtestscheme = load("data/margSIRscheme_timevarying.jld2", "marg")
     @test marg ≈ margtestscheme
+end
+
+########### checking averaging method when non-converged with damping scheme ##########
+n_iter_nc = 10
+damp_nc = 0.3
+
+@testset "inferenceSIRscheme_timevarying_nc" begin
+    Random.seed!(rng, 1)
+    nodes_nc = run_SCDC(model, obsprob, γ, [2,2], epsconv, damp, μ_cutoff=μ_cutoff, n_iter_nc=n_iter_nc, damp_nc=damp_nc, rng=rng)
+    Random.seed!(rng, 1)
+    nodes = run_SCDC(model, obsprob, γ, [2,2], epsconv, damp, μ_cutoff=μ_cutoff, rng=rng)
+    run_SCDC!(nodes, model, γ, [0,0], epsconv, damp, μ_cutoff=μ_cutoff, n_iter_nc=n_iter_nc, damp_nc=damp_nc, rng=rng)
+
+    marg = [node.marg.m[2,T+1] for node in nodes]
+    marg_nc = [node.marg.m[2,T+1] for node in nodes_nc]
+
+    @test marg ≈ marg_nc
 end
