@@ -216,7 +216,8 @@ end
         μ_cutoff::Float64 = -Inf,
         n_iter_nc::Int64 = 1,
         damp_nc::Float64 = 0.0,
-        callback::Function=(x...) -> nothing
+        callback::Function=(x...) -> nothing,
+        printlog::Bool = false,
         rng::AbstractRNG=Xoshiro(1234)) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
 Runs the Small Coupling Dynamic Cavity (SCDC) inference algorithm.
@@ -230,11 +231,14 @@ This function performs SCDC inference on the specified epidemic model, using the
 - `maxiter`: The maximum number of iterations.
 - `epsconv`: The convergence threshold of the algorithm.
 - `damp`: The damping factor of the algorithm.
-- `μ_cutoff`: (Optional) Lower cut-off for the values of μ.
-- `n_iter_nc`: (Optional) Number of iterations for non-converged messages. The messages are averaged over this number of iterations.
-- `damp_nc`: (Optional) Damping factor for non-converged messages.
-- `callback`: (Optional) A callback function to monitor the progress of the algorithm.
-- `rng`: (Optional) Random number generator.
+
+# Keyword Arguments
+- `μ_cutoff::Float64`: Cutoff value for some parameter μ (default is -Inf).
+- `n_iter_nc::Int64`: Number of iterations for non-converging cases (default is 1).
+- `damp_nc::Float64`: Damping factor for non-converging cases (default is 0.0).
+- `callback::Function`: Callback function to be called during iterations (default does nothing).
+- `printlog::Bool`: Print log messages during the algorithm (default is false).
+- `rng::AbstractRNG`: Random number generator (default is Xoshiro).
 
 # Returns
 - `nodes`: An array of [`Node`](@ref) objects representing the updated node states after inference.
@@ -251,6 +255,7 @@ function run_SCDC(
     n_iter_nc::Int64 = 1,
     damp_nc::Float64 = 0.0,
     callback::Function=(x...) -> nothing,
+    printlog::Bool = false,
     rng::AbstractRNG=Xoshiro(1234)) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     # Initialize prior probabilities based on the expected mean number of source patients (γ)
@@ -277,14 +282,18 @@ function run_SCDC(
 
         # Check for convergence
         if ε < epsconv
-            println("Converged after $iter iterations")
+            if printlog
+                println("Converged after $iter iterations")
+            end
             break
         end
     end
 
     # Check if convergence not achieved
     if ε > epsconv
-        println("NOT converged after $maxiter iterations")
+        if printlog
+            println("NOT converged after $maxiter iterations")
+        end
 
         avg_mess = [[Message(node.i, j, model.T; zero_mess=true) for j in node.∂] for node in nodes]
 
@@ -353,6 +362,7 @@ end
         n_iter_nc::Int64 = 1,
         damp_nc::Float64 = 0.0,
         callback::Function=(x...) -> nothing,
+        printlog::Bool = false,
         rng::AbstractRNG=Xoshiro(1234)) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
 Runs the Small Coupling Dynamic Cavity (SCDC) inference algorithm.
@@ -366,11 +376,14 @@ This function performs SCDC inference on the specified epidemic model, using the
 - `maxiter`: Vector of maximum number of iterations for each damping factor. 
 - `epsconv`: The convergence threshold of the algorithm.
 - `damp`: Vector of damping factors used in the damping schedule.
-- `μ_cutoff`: (Optional) Lower cut-off for the values of μ.
-- `n_iter_nc`: (Optional) Number of iterations for non-converged messages. The messages are averaged over this number of iterations.
-- `damp_nc`: (Optional) Damping factor for non-converged messages.
-- `callback`: (Optional) A callback function to monitor the progress of the algorithm.
-- `rng`: (Optional) Random number generator.
+
+# Keyword Arguments
+- `μ_cutoff::Float64`: Cutoff value for some parameter μ (default is -Inf).
+- `n_iter_nc::Int64`: Number of iterations for non-converging cases (default is 1).
+- `damp_nc::Float64`: Damping factor for non-converging cases (default is 0.0).
+- `callback::Function`: Callback function to be called during iterations (default does nothing).
+- `printlog::Bool`: Print log messages during the algorithm (default is false).
+- `rng::AbstractRNG`: Random number generator (default is Xoshiro).
 
 # Returns
 - `nodes`: An array of [`Node`](@ref) objects representing the updated node states after inference.
@@ -387,6 +400,7 @@ function run_SCDC(
     n_iter_nc::Int64 = 1,
     damp_nc::Float64 = 0.0,
     callback::Function=(x...) -> nothing,
+    printlog::Bool = false,
     rng::AbstractRNG=Xoshiro(1234)) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     # Debugging
@@ -423,7 +437,9 @@ function run_SCDC(
             
             # Check for convergence
             if ε < epsconv
-                println("Converged after $iter iterations")
+                if printlog
+                    println("Converged after $iter iterations")
+                end
                 check_convergence = true
                 break
             end
@@ -436,7 +452,9 @@ function run_SCDC(
 
     # Check if convergence not achieved
     if ε > epsconv
-        println("NOT converged after $maxiter iterations")
+        if printlog
+            println("NOT converged after $iter iterations")
+        end
 
         avg_mess = [[Message(node.i, j, model.T; zero_mess=true) for j in node.∂] for node in nodes]
 
@@ -504,6 +522,7 @@ end
         n_iter_nc::Int64 = 1, 
         damp_nc::Float64 = 0.0, 
         callback::Function=(x...) -> nothing, 
+        printlog::Bool = false,
         rng::AbstractRNG=Xoshiro(1234)) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
 Run the SCDC algorithm for epidemic modeling. The algorithm resumes the message-passing iterations from the current state of the nodes.
@@ -523,6 +542,7 @@ This function performs SCDC inference on the specified epidemic model, using the
 - `n_iter_nc::Int64`: Number of iterations for non-converging cases (default is 1).
 - `damp_nc::Float64`: Damping factor for non-converging cases (default is 0.0).
 - `callback::Function`: Callback function to be called during iterations (default does nothing).
+- `printlog::Bool`: Print log messages during the algorithm (default is false).
 - `rng::AbstractRNG`: Random number generator (default is Xoshiro).
 """
 function run_SCDC!(
@@ -536,6 +556,7 @@ function run_SCDC!(
     n_iter_nc::Int64 = 1,
     damp_nc::Float64 = 0.0,
     callback::Function=(x...) -> nothing,
+    printlog::Bool = false,
     rng::AbstractRNG=Xoshiro(1234)) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     # Initialize prior probabilities based on the expected mean number of source patients (γ)
@@ -560,14 +581,18 @@ function run_SCDC!(
 
         # Check for convergence
         if ε < epsconv
-            println("Converged after $iter iterations")
+            if printlog
+                println("Converged after $iter iterations")
+            end
             break
         end
     end
 
     # Check if convergence not achieved
     if ε > epsconv
-        println("NOT converged after $maxiter iterations")
+        if printlog
+            println("NOT converged after $maxiter iterations")
+        end
 
         avg_mess = [[Message(node.i, j, model.T; zero_mess=true) for j in node.∂] for node in nodes]
 
@@ -623,7 +648,19 @@ end
 
 
 """
-    run_SCDC!(nodes::Vector{Node{TI,TG}}, model::EpidemicModel{TI,TG}, γ::Float64, maxiter::Vector{Int64}, epsconv::Float64, damp::Vector{Float64}; μ_cutoff::Float64 = -Inf, n_iter_nc::Int64 = 1, damp_nc::Float64 = 0.0, callback::Function=(x...) -> nothing, rng::AbstractRNG=Xoshiro(1234))
+    run_SCDC!(
+        nodes::Vector{Node{TI,TG}}, 
+        model::EpidemicModel{TI,TG}, 
+        γ::Float64, 
+        maxiter::Vector{Int64}, 
+        epsconv::Float64, 
+        damp::Vector{Float64}; 
+        μ_cutoff::Float64 = -Inf, 
+        n_iter_nc::Int64 = 1, 
+        damp_nc::Float64 = 0.0, 
+        callback::Function=(x...) -> nothing,
+        printlog::Bool = false,
+        rng::AbstractRNG=Xoshiro(1234))
 
 Run the SCDC algorithm for epidemic modeling. The algorithm resumes the message-passing iterations from the current state of the nodes.
 
@@ -642,6 +679,7 @@ This function performs SCDC inference on the specified epidemic model, using the
 - `n_iter_nc::Int64`: Number of iterations for non-converging cases (default is 1).
 - `damp_nc::Float64`: Damping factor for non-converging cases (default is 0.0).
 - `callback::Function`: Callback function to be called during iterations (default does nothing).
+- `printlog::Bool`: Print log messages during the algorithm (default is false).
 - `rng::AbstractRNG`: Random number generator (default is Xoshiro).
 """
 function run_SCDC!(
@@ -655,6 +693,7 @@ function run_SCDC!(
     n_iter_nc::Int64 = 1,
     damp_nc::Float64 = 0.0,
     callback::Function=(x...) -> nothing,
+    printlog::Bool = false,
     rng::AbstractRNG=Xoshiro(1234)) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     # Debugging
@@ -688,7 +727,9 @@ function run_SCDC!(
             
             # Check for convergence
             if ε < epsconv
-                println("Converged after $iter iterations")
+                if printlog
+                    println("Converged after $iter iterations")
+                end
                 check_convergence = true
                 break
             end
@@ -701,7 +742,9 @@ function run_SCDC!(
 
     # Check if convergence not achieved
     if ε > epsconv
-        println("NOT converged after $maxiter iterations")
+        if printlog
+            println("NOT converged after $iter iterations")
+        end
 
         avg_mess = [[Message(node.i, j, model.T; zero_mess=true) for j in node.∂] for node in nodes]
 
