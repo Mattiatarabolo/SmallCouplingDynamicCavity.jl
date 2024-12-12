@@ -111,6 +111,8 @@ struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:Abstr
     ν::Array{Float64, 3}
     """Observations matrix. It is a NVx(T+1) Matrix, where obsᵗᵢ is the observation of individual i at time t: it is equal to -1.0 if not observed, 0.0 if S, 1.0 if I, 2.0 if R (only for SIR and SIRS)."""
     obsmat::Matrix{Int8}
+    """Flag to check if the algorithm has converged."""
+    converged::Bool
 
     @doc """
         EpidemicModel(
@@ -138,7 +140,7 @@ struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:Abstr
         G::TG, T::Int, 
         ν::Array{Float64, 3}, 
         obs::Matrix{Int8}) where {TI<:InfectionModel,TG<:AbstractGraph}
-        new{TI,TG}(infectionmodel, G, nv(G), T, ν, obs)
+        new{TI,TG}(infectionmodel, G, nv(G), T, ν, obs, false)
     end
 
     @doc """
@@ -167,7 +169,7 @@ struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:Abstr
         G::TG, T::Int, 
         ν::Array{Float64, 3}, 
         obs::Matrix{Int8}) where {TI<:InfectionModel,TG<:Vector{<:AbstractGraph}}
-        new{TI,TG}(infectionmodel, G, nv(G[1]), T, ν, obs)
+        new{TI,TG}(infectionmodel, G, nv(G[1]), T, ν, obs, false)
     end
 
     @doc """
@@ -194,7 +196,7 @@ struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:Abstr
         G::TG, 
         T::Int, 
         ν::Array{Float64, 3}) where {TI<:InfectionModel,TG<:AbstractGraph}
-        new{TI,TG}(infectionmodel, G, nv(G), T, ν, ones(Int8, nv(G),T+1)*Int8(-1))
+        new{TI,TG}(infectionmodel, G, nv(G), T, ν, ones(Int8, nv(G),T+1)*Int8(-1), false)
     end
 
 
@@ -222,7 +224,7 @@ struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:Abstr
         G::TG, 
         T::Int, 
         ν::Array{Float64, 3}) where {TI<:InfectionModel,TG<:Vector{<:AbstractGraph}}
-        new{TI,TG}(infectionmodel, G, nv(G[1]), T, ν, zeros(nv(G[1]),T+1))
+        new{TI,TG}(infectionmodel, G, nv(G[1]), T, ν, zeros(nv(G[1]),T+1), false)
     end
 
 end

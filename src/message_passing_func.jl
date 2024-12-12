@@ -285,6 +285,7 @@ function run_SCDC(
             if printlog
                 println("Converged after $iter iterations")
             end
+            model.converged = true
             break
         end
     end
@@ -423,7 +424,6 @@ function run_SCDC(
     ρ = FBm(model.T, model.Disease)
     sumargexp = SumM(model.T)
 
-
     ε = 0.0
 
     # Iteratively update cavity messages until convergence or maximum iterations reached
@@ -446,6 +446,7 @@ function run_SCDC(
         end
 
         if check_convergence
+            model.converged = true
             break
         end
     end
@@ -584,6 +585,7 @@ function run_SCDC!(
             if printlog
                 println("Converged after $iter iterations")
             end
+            model.converged = true
             break
         end
     end
@@ -736,6 +738,7 @@ function run_SCDC!(
         end
 
         if check_convergence
+            model.converged = true
             break
         end
     end
