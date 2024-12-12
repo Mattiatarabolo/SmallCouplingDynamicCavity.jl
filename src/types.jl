@@ -98,7 +98,7 @@ Epidemic model containing all the informations of the system.
 $(TYPEDFIELDS)
 
 """
-struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+mutable struct EpidemicModel{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
     """Infection model. Currently are implemented SI, SIR, SIS and SIRS infection models."""
     Disease::TI
     """Contact graph. It can be either an AbstractGraph (contact graph constant over time) or a Vector of AbstractGraph (time varying contact graph)."""
