@@ -662,7 +662,7 @@ end
         damp_nc::Float64 = 0.0, 
         callback::Function=(x...) -> nothing,
         printlog::Bool = false,
-        rng::AbstractRNG=Xoshiro(1234))
+        rng::AbstractRNG=Xoshiro(1234)) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
 Run the SCDC algorithm for epidemic modeling. The algorithm resumes the message-passing iterations from the current state of the nodes.
 

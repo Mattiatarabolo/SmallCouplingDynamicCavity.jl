@@ -222,3 +222,59 @@ damp_nc = 0.3
 
     @test marg ≈ marg_nc
 end
+
+
+
+########### checking forward dynamics ##########
+##### Test SI model #####
+NV = 50 # number of graph vertices
+k = 3 # average degree
+
+#genrate an Erdos-Renyi random graph with average connectivity k
+rng = Xoshiro(1)
+G = random_regular_graph(NV, k, rng=rng)
+
+# define the constants
+T = 10 # total time
+γ = 1/NV # Patient zero probability
+λ₀ = 0.3 # Infection rate
+
+# constant infection probability
+λ = zeros(NV, NV, T)
+for e in edges(G)
+    λ[src(e), dst(e), :] = ones(T) * λ₀
+    λ[dst(e), src(e), :] = ones(T) * λ₀
+end
+
+# define de epidemic model
+infectionmodel = SI(0.0, NV, T)
+model = EpidemicModel(infectionmodel, G, T, log.(1 .- λ))
+
+@testset "fwd_dyn_RRG" begin
+    #function to run the forward dynamics on regular graphs
+    function fwd_regular(γ, K, ν, T, NV)
+        cavs = zeros(T+1)
+        margs = zeros(T+1)
+        cavs[1] = γ
+        margs[1] = γ
+        @inbounds @fastmath @simd for t in 1:T
+            cavs[t+1] = cavs[t] + (1-cavs[t])*(1-exp((K-1)*cavs[t]*ν))
+            margs[t+1] = margs[t] + (1-margs[t])*(1-exp(K*cavs[t]*ν))
+        end
+        return cavs, margs
+    end
+
+    # run SCDC forward dynamics
+    nodes = run_fwd_dynamics(model, γ)
+    
+    # run regular forward dynamics
+    cavstest, margtest = fwd_regular(γ, k, log(1-λ₀), T, NV)
+
+    # check the results
+    for node in nodes
+        @test node.marg.m[2,:] ≈ margtest
+        for cav in node.cavities
+            @test cav.m ≈ cavstest
+        end
+    end
+end

@@ -43,6 +43,42 @@ end
 n_states(X::SI) = 2
 
 
+function nodes_formatting(model::EpidemicModel{SI,TG}) where {TG<:AbstractGraph}
+    nodes = Vector{Node{SI,TG}}()
+
+    for i in 1:model.N
+        obs = ones(2, model.T + 1)
+
+        ∂ = neighbors(model.G, i)
+
+        ν∂ = [model.ν[k, i, :] for k in ∂]
+
+        push!(nodes, Node(i, ∂, model.T, ν∂, obs, model))
+    end
+    return collect(nodes)
+end
+
+
+function nodes_formatting(model::EpidemicModel{SI,TG}) where {TG<:Vector{<:AbstractGraph}}
+    nodes = Vector{Node{SI,TG}}()
+
+    for i in 1:model.N
+        obs = ones(2, model.T + 1)
+
+        ∂ = Vector{Int}()
+
+        for t in 1:model.T
+            ∂ = union(∂, neighbors(model.G[t], i))
+        end
+             
+        ν∂ = [model.ν[k, i, :] for k in ∂]
+
+        push!(nodes, Node(i, ∂, model.T, ν∂, obs, model))
+    end
+    return collect(nodes)
+end
+
+
 function nodes_formatting(
     model::EpidemicModel{SI,TG}, 
     obsprob::Function) where {TG<:AbstractGraph}
@@ -64,6 +100,7 @@ function nodes_formatting(
     end
     return collect(nodes)
 end
+
 
 function nodes_formatting(
     model::EpidemicModel{SI,TG}, 
@@ -169,4 +206,83 @@ function sim_epidemics(
         config[:, t+1] = [x + (1 - x) * rand(rng, Bernoulli(1 - exp(h))) for (x, h) in zip(config[:, t], hs)]
     end
     return config
+end
+
+
+
+
+####################################  Forward dynamics  #######################################
+
+function compute_fwd_sumargexp!(inode::Node{SI,TG}, t::Int) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+
+    sumargexp = 0.0
+
+    @inbounds @fastmath for (kindex, k) in enumerate(inode.∂)
+        sumargexp += inode.cavities[kindex].m[t] * inode.νs[kindex][t]
+    end
+
+    return sumargexp
+end
+
+
+function fwd_cav_update!(model::EpidemicModel{SI,TG}, nodes::Vector{Node{SI,TG}}) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+
+
+    @inbounds @fastmath for t in 1:model.T
+        @inbounds @fastmath for inode in nodes
+            # compute sumargexp
+            sumargexp = compute_fwd_sumargexp!(inode, t)
+
+            # compute cavities
+            @inbounds @fastmath for (jindex, j) in enumerate(inode.∂)
+                iindex = nodes[j].∂_idx[inode.i]
+                nodes[j].cavities[iindex].m[t+1] = nodes[j].cavities[iindex].m[t] + (1-nodes[j].cavities[iindex].m[t])*(1-(1-model.Disease.εᵢᵗ[inode.i,t])*exp(sumargexp-inode.cavities[jindex].m[t]*inode.νs[jindex][t]))
+            end
+        end
+    end
+end
+
+
+function fwd_marg_update!(model::EpidemicModel{SI,TG}, nodes::Vector{Node{SI,TG}}) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+
+    @inbounds @fastmath for t in 1:model.T
+        @inbounds @fastmath for inode in nodes
+            sumargexp = compute_fwd_sumargexp!(inode, t)
+            inode.marg.m[2,t+1] = inode.marg.m[2,t] + (1-inode.marg.m[2,t])*(1-(1-model.Disease.εᵢᵗ[inode.i,t])*exp(sumargexp))
+        end
+    end
+end
+
+
+"""
+    run_fwd_dynamics(model::EpidemicModel{SI,TG}, γ::Float64) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+
+Run the forward-in-time SCDC algorithm for epidemic modeling.
+
+This function performs SCDC forward-in-time epidemic dynamics on the specified epidemic model, using the provided parameters such as the probability of being a patient zero, etc. It iteratively updates cavity messages until convergence or until the maximum number of iterations is reached.
+
+# Arguments
+- `model::EpidemicModel{SI,TG}`: The epidemic model to be used.
+- `γ::Float64`: A parameter for the algorithm (e.g., infection rate).
+"""
+function run_fwd_dynamics(model::EpidemicModel{SI,TG}, γ::Float64) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+
+    # Format nodes for inference
+    nodes = nodes_formatting(model)
+
+    # Initialize message objects
+    for inode in nodes
+        inode.marg.m[2, 1] = γ
+        @inbounds @fastmath for (jindex, j) in enumerate(inode.∂)
+            inode.cavities[jindex].m[1] = γ
+        end
+    end
+
+    # Compute cavity messages
+    fwd_cav_update!(model, nodes)
+    
+    # Compute final marginal probabilities
+    fwd_marg_update!(model, nodes)
+
+    return nodes
 end
