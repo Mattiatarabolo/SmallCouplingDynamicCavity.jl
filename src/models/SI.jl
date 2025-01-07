@@ -255,7 +255,7 @@ end
 
 
 """
-    run_fwd_dynamics(model::EpidemicModel{SI,TG}, γ::Float64) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    run_fwd_dynamics(model::EpidemicModel{SI,TG}, γ::Vector{Float64}) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
 Run the forward-in-time SCDC algorithm for epidemic modeling.
 
@@ -263,18 +263,18 @@ This function performs SCDC forward-in-time epidemic dynamics on the specified e
 
 # Arguments
 - `model::EpidemicModel{SI,TG}`: The epidemic model to be used.
-- `γ::Float64`: A parameter for the algorithm (e.g., infection rate).
+- `prior::Vector{Float64}`: Prior probabilities of the nodes being infected at time t=0.
 """
-function run_fwd_dynamics(model::EpidemicModel{SI,TG}, γ::Float64) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+function run_fwd_dynamics(model::EpidemicModel{SI,TG}, prior::Vector{Float64}) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     # Format nodes for inference
     nodes = nodes_formatting(model)
 
     # Initialize message objects
     for inode in nodes
-        inode.marg.m[2, 1] = γ
+        inode.marg.m[2, 1] = prior[inode.i]
         @inbounds @fastmath for (jindex, j) in enumerate(inode.∂)
-            inode.cavities[jindex].m[1] = γ
+            inode.cavities[jindex].m[1] = prior[nodes[j].i]
         end
     end
 

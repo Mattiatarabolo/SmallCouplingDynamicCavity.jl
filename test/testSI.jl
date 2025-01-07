@@ -226,7 +226,7 @@ end
 
 
 ########### checking forward dynamics ##########
-##### Test SI model #####
+
 NV = 50 # number of graph vertices
 k = 3 # average degree
 
@@ -237,6 +237,7 @@ G = random_regular_graph(NV, k, rng=rng)
 # define the constants
 T = 10 # total time
 γ = 1/NV # Patient zero probability
+prior = ones(NV) * γ
 λ₀ = 0.3 # Infection rate
 
 # constant infection probability
@@ -265,7 +266,7 @@ model = EpidemicModel(infectionmodel, G, T, log.(1 .- λ))
     end
 
     # run SCDC forward dynamics
-    nodes = run_fwd_dynamics(model, γ)
+    nodes = run_fwd_dynamics(model, prior)
     
     # run regular forward dynamics
     cavstest, margtest = fwd_regular(γ, k, log(1-λ₀), T, NV)
