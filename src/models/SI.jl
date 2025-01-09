@@ -179,31 +179,35 @@ function sim_epidemics(
     model::EpidemicModel{SI,TG};
     patient_zero::Union{Vector{Int},Nothing}=nothing,
     γ::Union{Float64,Nothing}=nothing,
+    reject::Bool=false,
     rng::AbstractRNG=Xoshiro(1234)) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
-    inf₀ = false
-    if patient_zero === nothing && γ !== nothing
-        while !inf₀
-            patient_zero = rand(rng, Binomial(1,γ), model.N)
-            patient_zero = findall(x->x==1, patient_zero)
+    inf₀ = (patient_zero !== nothing)
+    (γ===nothing) && (γ=1/model.N)
+    if !inf₀
+        if reject
+            x₀ = [Int8(rand(rng) < γ) for _ in 1:model.N]
+            patient_zero = findall(x->x==1, x₀)
             inf₀ = !isempty(patient_zero)
-        end
-    elseif patient_zero === nothing && γ === nothing
-        while !inf₀
-            patient_zero = rand(rng, Binomial(1,1/model.N), model.N)
-            patient_zero = findall(x->x==1, patient_zero)
-            inf₀ = !isempty(patient_zero)
+        else
+            while !inf₀
+                x₀ = [Int8(rand(rng) < γ) for _ in 1:model.N]
+                patient_zero = findall(x->x==1, x₀)
+                inf₀ = !isempty(patient_zero)
+            end
         end
     end
 
     config = zeros(Int8, model.N, model.T + 1)
 
+    !inf₀ && return config
+
     config[patient_zero, 1] .+= 1
 
     hs = zeros(model.N)
     for t in 1:model.T
-        hs = config[:, t]' * model.ν[:, :, t]
-        config[:, t+1] = [x + (1 - x) * rand(rng, Bernoulli(1 - exp(h))) for (x, h) in zip(config[:, t], hs)]
+        hs .= config[:, t]' * model.ν[:, :, t]
+        config[:, t+1] .= [x + (1 - x) * rand(rng, Bernoulli(1 - exp(h))) for (x, h) in zip(config[:, t], hs)]
     end
     return config
 end
