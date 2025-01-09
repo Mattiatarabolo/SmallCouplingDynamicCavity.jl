@@ -182,6 +182,7 @@ function sim_epidemics(
     reject::Bool=true,
     rng::AbstractRNG=Xoshiro(1234)) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
+    config = zeros(Int8, model.N, model.T + 1)
     inf₀ = (patient_zero !== nothing)
     (γ===nothing) && (γ=1/model.N)
     if !inf₀
@@ -201,8 +202,6 @@ function sim_epidemics(
             end
         end
     end
-
-    config = zeros(Int8, model.N, model.T + 1)
 
     !inf₀ && return config
 
