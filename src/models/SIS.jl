@@ -153,13 +153,13 @@ function sim_epidemics(
     model::EpidemicModel{SIS,TG};
     patient_zero::Union{Vector{Int},Nothing}=nothing,
     γ::Union{Float64,Nothing}=nothing,
-    reject::Bool=false,
+    reject::Bool=true,
     rng::AbstractRNG=Xoshiro(1234)) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
     inf₀ = (patient_zero !== nothing)
     (γ===nothing) && (γ=1/model.N)
     if !inf₀
-        if reject
+        if !reject
             x₀ = [Int8(rand(rng) < γ) for _ in 1:model.N]
             patient_zero = findall(x->x==1, x₀)
             inf₀ = !isempty(patient_zero)
@@ -175,7 +175,7 @@ function sim_epidemics(
     config = zeros(Int8, model.N, model.T + 1)
 
     !inf₀ && return config
-    
+
     config[patient_zero, 1] .+= 1
 
     hs = zeros(model.N)
