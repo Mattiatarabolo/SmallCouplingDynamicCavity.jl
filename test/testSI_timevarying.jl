@@ -24,16 +24,7 @@ end
 infectionmodel = SI(0.0, NV, T)
 model = EpidemicModel(infectionmodel, G, T, log.(1 .- λ))
 
-configtest=[1 1 1 1 1 1; 
-            0 0 0 1 1 1; 
-            0 0 0 0 0 0; 
-            0 0 0 0 1 1; 
-            0 0 0 0 0 1; 
-            0 0 0 0 0 0; 
-            0 0 0 0 0 0; 
-            0 0 0 0 0 1; 
-            0 0 0 0 0 0; 
-            0 0 0 0 0 0]
+configtest= load_object("data/configSI_timevarying.jld2")
 
 # generate observations at the last time
 obsmat = ones(Int8, NV, T+1) * (-1)
@@ -50,12 +41,12 @@ maxiter = 500 # max number of iterations
 damp = 0.1 # damping factor
 μ_cutoff = -1.0 # cutoff for convergence
 
-margtest = load("data/margSI_timevarying.jld2", "marg")
+margtest = load_object("data/margSI_timevarying.jld2")
 
 @testset "SimSI_timevarying" begin
     # epidemic simulation
     Random.seed!(rng, 3)
-    config = sim_epidemics(model, patient_zero=[1], rng=rng)
+    config = sim_epidemics(model, patient_zero=[1], reject=true, rng=rng)
 
     @test config ≈ configtest
 end
@@ -100,7 +91,7 @@ damp = [0.9, 0.5]  # damping factor scheme
         marg[i,:,:] = node.marg.m
     end
 
-    margtestscheme = load("data/margSIscheme_timevarying.jld2", "marg")
+    margtestscheme = load_object("data/margSIscheme_timevarying.jld2")
     @test marg ≈ margtestscheme
 end
 

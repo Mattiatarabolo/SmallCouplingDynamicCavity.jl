@@ -148,76 +148,27 @@ function fill_transmat_marg!(
     end
 end
 
-"""
-    sim_epidemics(
-        model::EpidemicModel{SIRS,TG};
-        patient_zero::Union{Vector{Int},Nothing}=nothing,
-        γ::Union{Float64,Nothing}=nothing) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
 
-Simulates an epidemic outbreak using the SIRS (Susceptible-Infectious-Recovered-Susceptible) model.
+function W_SIRS(x, y, h::Float64, r::Float64, σ::Float64, α::Float64)
+    @assert x in 0:2 && y in 0:2 "x=$x, y=$y"
+    @assert 0<=r<=1 && 0<=σ<=1 && 0<=α<=1 "r=$r, σ=$σ, α=$α"
+    (x==0) && return (y==0)*α*exp(h) + (y==2)*σ
+    (x==1) && return (y==0)*(1-α*exp(h)) + (y==1)*(1-r)
+    (x==2) && return (y==1)*r + (y==2)*(1-σ)
+end
 
-# Arguments
-- `model`: The SIRS epidemic model, encapsulating information about the infection dynamics, contact graph, and other parameters.
-- `patient_zero`: (Optional) A vector specifying the indices of initial infected individuals. If not provided (default `nothing`), patient zero is selected randomly based on the probability `γ`.
-- `γ`: (Optional) The probability of being a patient zero. If `patient_zero` is not specified and `γ` is provided, patient zero is chosen randomly with probability `γ`. If both `patient_zero` and `γ` are not provided (default `nothing`), patient zero is selected randomly with equal probability for each individual.
-- `rng`: (Optional) A random number generator. Default is `Xoshiro(1234)`.
 
-# Returns
-- A matrix representing the epidemic outbreak configuration over time. Each row corresponds to a node, and each column represents a time step. The values in the matrix indicate the state of each node at each time step: 0.0 for Susceptible (S), 1.0 for Infected (I), and 2.0 for Recovered (R).
-"""
-function sim_epidemics(
-    model::EpidemicModel{SIRS,TG};
-    patient_zero::Union{Vector{Int},Nothing}=nothing,
-    γ::Union{Float64,Nothing}=nothing,
-    reject::Bool=true,
-    rng::AbstractRNG=Xoshiro(1234)) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+function sample_single(rng::AbstractRNG, i::Int, t::Int, y::Int8, h::Float64, model::EpidemicModel{SIRS,TG}) where {TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+    p_S = W_SIRS(0, y, h, model.Disease.rᵢᵗ[i,t], model.Disease.σᵢᵗ[i,t], 1-model.Disease.εᵢᵗ[i,t])
+    p_I = W_SIRS(1, y, h, model.Disease.rᵢᵗ[i,t], model.Disease.σᵢᵗ[i,t], 1-model.Disease.εᵢᵗ[i,t])
+    p_R = W_SIRS(2, y, h, model.Disease.rᵢᵗ[i,t], model.Disease.σᵢᵗ[i,t], 1-model.Disease.εᵢᵗ[i,t])
 
-    config = zeros(Int8, model.N, model.T + 1)
+    pcum = cumsum([p_S, p_I, p_R])
 
-    inf₀ = (patient_zero !== nothing)
-    (γ===nothing) && (γ=1/model.N)
-    if !inf₀
-        if !reject
-            x₀ = [Int8(rand(rng) < γ) for _ in 1:model.N]
-            patient_zero = findall(x->x==1, x₀)
-            inf₀ = !isempty(patient_zero)
-        else
-            while !inf₀
-                x₀ = [Int8(rand(rng) < γ) for _ in 1:model.N]
-                patient_zero = findall(x->x==1, x₀)
-                inf₀ = !isempty(patient_zero)
-            end
-        end
-    end
+    u = rand(rng)
 
-    !inf₀ && return config
-
-    config[patient_zero,1] .+= 1
-
-    function W_SIRS(x, y, h::Float64, r::Float64, σ::Float64)
-        if x == 0
-            return (y == 0) * exp(h) + (y == 2) * σ
-        elseif x == 1
-            return (y == 0) * (1 - exp(h)) + (y == 1) * (1 - r)
-        elseif x == 2
-            return (y == 1) * r + (y == 2) * (1 - σ)
-        else
-            throw(ArgumentError("Invalid value for y"))
-        end
-    end
-    hs = zeros(model.N)
-    for t in 1:model.T
-        hs = [Float64(x == 1) for x in config[:, t]]' * model.ν[:, :, t]
-        config[:, t+1] = [
-            if (u <= W_SIRS(0, x, h, r, σ))
-                0
-            elseif (W_SIRS(0, x, h, r, σ) < u <= W_SIRS(0, x, h, r, σ) + W_SIRS(1, x, h, r, σ))
-                1
-            else
-                2
-            end for (x, h, r, σ, u) in zip(config[:, t], hs, model.Disease.rᵢᵗ[:, t], model.Disease.σᵢᵗ[:, t], rand(rng, Float64, model.N))
-        ]
-    end
-    return config
+    (u<pcum[1]) && return Int8(0)
+    (pcum[1]<=u<pcum[2]) && return Int8(1)
+    (pcum[2]<=u) && return Int8(2)
 end
   

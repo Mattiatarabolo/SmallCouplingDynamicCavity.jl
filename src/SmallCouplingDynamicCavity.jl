@@ -8,9 +8,9 @@ $(EXPORTS)
 """
 module SmallCouplingDynamicCavity
 
-    using Graphs, Distributions, DocStringExtensions, Random
+    using Graphs, DocStringExtensions, Random, StatsBase
 
-    export sim_epidemics, run_SCDC, run_SCDC!, run_fwd_dynamics, ROC_curve, bethe_lattice, SI, SIR, SIS, SIRS, EpidemicModel
+    export sim_epidemics, sim_epidemics!, run_SCDC, run_SCDC!, run_fwd_dynamics, ROC_curve, bethe_lattice, SI, SIR, SIS, SIRS, EpidemicModel
 
     abstract type InfectionModel
         # the infection probability is included into the temporal graph

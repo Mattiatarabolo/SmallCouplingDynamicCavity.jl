@@ -5,6 +5,263 @@ end
 
 
 """
+    sim_epidemics(
+        model::EpidemicModel{TI,TG};
+        patient_zero::Union{Vector{Int},Nothing}=nothing,
+        γ::Union{Float64,Nothing}=nothing) where {TI<:InfectionModel,TG<:<:AbstractGraph}
+
+Simulates an epidemic outbreak.
+
+# Arguments
+- `model`: The epidemic model, encapsulating information about the infection dynamics, contact graph, and other parameters.
+- `patient_zero`: (Optional) A vector specifying the indices of initial infected individuals. If not provided (default `nothing`), patient zero is selected randomly based on the probability `γ`.
+- `γ`: (Optional) The probability of being a patient zero. If `patient_zero` is not specified and `γ` is provided, patient zero is chosen randomly with probability `γ`. If both `patient_zero` and `γ` are not provided (default `nothing`), patient zero is selected randomly with equal probability for each individual.
+- `rng`: (Optional) A random number generator. Default is `Xoshiro(1234)`.
+
+# Returns
+- A matrix representing the epidemic outbreak configuration over time. Each row corresponds to a node, and each column represents a time step. The values in the matrix indicate the state of each node at each time step.
+"""
+function sim_epidemics(
+    model::EpidemicModel{TI,TG};
+    patient_zero::Union{Vector{Int},Nothing}=nothing,
+    γ::Union{Float64,Nothing}=nothing,
+    reject::Bool=true,
+    rng::AbstractRNG=Xoshiro(1234)) where {TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}}}
+
+    config = zeros(Int8, model.N, model.T + 1)
+    inf₀ = (patient_zero !== nothing)
+    (γ===nothing) && (γ=1/model.N)
+    if !inf₀
+        if !reject
+            @inbounds @fastmath @simd for i in 1:model.N
+                config[i, 1] = Int8(rand(rng) < γ)
+            end
+            patient_zero = findall(x->x==1, config[:, 1])
+            inf₀ = !isempty(patient_zero)
+        else
+            while !inf₀
+                @inbounds @fastmath @simd for i in 1:model.N
+                    config[i, 1] = Int8(rand(rng) < γ)
+                end
+                patient_zero = findall(x->x==1, config[:, 1])
+                inf₀ = !isempty(patient_zero)
+            end
+        end
+    end
+
+    !inf₀ && return config
+
+    config[patient_zero, 1] .= 1
+
+    @inbounds @fastmath for t in 1:model.T
+        @inbounds @fastmath for i in 1:model.N
+            h = 0.0
+            @inbounds @fastmath for j in neighbors(model.G, i)
+                h += config[j,t] * model.ν[j,i,t]
+            end
+            config[i, t+1] = sample_single(rng, i, t, config[i,t], h, model)
+        end
+    end
+    return config
+end
+
+
+"""
+    sim_epidemics(
+        model::EpidemicModel{TI,TG};
+        patient_zero::Union{Vector{Int},Nothing}=nothing,
+        γ::Union{Float64,Nothing}=nothing) where {TI<:InfectionModel,TG<:Vector{<:AbstractGraph}}
+
+Simulates an epidemic outbreak.
+
+# Arguments
+- `model`: The epidemic model, encapsulating information about the infection dynamics, contact graph, and other parameters.
+- `patient_zero`: (Optional) A vector specifying the indices of initial infected individuals. If not provided (default `nothing`), patient zero is selected randomly based on the probability `γ`.
+- `γ`: (Optional) The probability of being a patient zero. If `patient_zero` is not specified and `γ` is provided, patient zero is chosen randomly with probability `γ`. If both `patient_zero` and `γ` are not provided (default `nothing`), patient zero is selected randomly with equal probability for each individual.
+- `rng`: (Optional) A random number generator. Default is `Xoshiro(1234)`.
+
+# Returns
+- A matrix representing the epidemic outbreak configuration over time. Each row corresponds to a node, and each column represents a time step. The values in the matrix indicate the state of each node at each time step.
+"""
+function sim_epidemics(
+    model::EpidemicModel{TI,TG};
+    patient_zero::Union{Vector{Int},Nothing}=nothing,
+    γ::Union{Float64,Nothing}=nothing,
+    reject::Bool=true,
+    rng::AbstractRNG=Xoshiro(1234)) where {TI<:InfectionModel,TG<:Vector{<:AbstractGraph}}
+
+    config = zeros(Int8, model.N, model.T + 1)
+    inf₀ = (patient_zero !== nothing)
+    (γ===nothing) && (γ=1/model.N)
+    if !inf₀
+        if !reject
+            @inbounds @fastmath @simd for i in 1:model.N
+                config[i, 1] = Int8(rand(rng) < γ)
+            end
+            patient_zero = findall(x->x==1, config[:, 1])
+            inf₀ = !isempty(patient_zero)
+        else
+            while !inf₀
+                @inbounds @fastmath @simd for i in 1:model.N
+                    config[i, 1] = Int8(rand(rng) < γ)
+                end
+                patient_zero = findall(x->x==1, config[:, 1])
+                inf₀ = !isempty(patient_zero)
+            end
+        end
+    end
+
+    !inf₀ && return config
+
+    config[patient_zero, 1] .= 1
+
+    @inbounds @fastmath for t in 1:model.T
+        @inbounds @fastmath for i in 1:model.N
+            h = 0.0
+            @inbounds @fastmath for j in neighbors(model.G[t], i)
+                h += config[j,t] * model.ν[j,i,t]
+            end
+            config[i, t+1] = sample_single(rng, i, t, config[i,t], h, model)
+        end
+    end
+    return config
+end
+
+
+"""
+    sim_epidemics!(
+        config::Array{Int8,2},
+        model::EpidemicModel{TI,TG};
+        patient_zero::Union{Vector{Int},Nothing}=nothing,
+        γ::Union{Float64,Nothing}=nothing) where {TI<:InfectionModel,TG<:AbstractGraph}
+
+Simulates an epidemic outbreak.
+
+# Arguments
+- `config`: A matrix representing the epidemic configuration. Each row corresponds to a node, and each column represents a time step.
+- `model`: The epidemic model, encapsulating information about the infection dynamics, contact graph, and other parameters.
+- `patient_zero`: (Optional) A vector specifying the indices of initial infected individuals. If not provided (default `nothing`), patient zero is selected randomly based on the probability `γ`.
+- `γ`: (Optional) The probability of being a patient zero. If `patient_zero` is not specified and `γ` is provided, patient zero is chosen randomly with probability `γ`. If both `patient_zero` and `γ` are not provided (default `nothing`), patient zero is selected randomly with equal probability for each individual.
+- `rng`: (Optional) A random number generator. Default is `Xoshiro(1234)`.
+
+# Returns
+- A matrix representing the epidemic outbreak configuration over time. Each row corresponds to a node, and each column represents a time step. The values in the matrix indicate the state of each node at each time step.
+"""
+function sim_epidemics!(
+    config::Array{Int8,2},
+    model::EpidemicModel{TI,TG};
+    patient_zero::Union{Vector{Int},Nothing}=nothing,
+    γ::Union{Float64,Nothing}=nothing,
+    reject::Bool=true,
+    rng::AbstractRNG=Xoshiro(1234)) where  {TI<:InfectionModel,TG<:AbstractGraph}
+
+    inf₀ = (patient_zero !== nothing)
+    (γ===nothing) && (γ=1/model.N)
+    if !inf₀
+        if !reject
+            @inbounds @fastmath @simd for i in 1:model.N
+                config[i, 1] = Int8(rand(rng) < γ)
+            end
+            patient_zero = findall(x->x==1, config[:, 1])
+            inf₀ = !isempty(patient_zero)
+        else
+            while !inf₀
+                @inbounds @fastmath @simd for i in 1:model.N
+                    config[i, 1] = Int8(rand(rng) < γ)
+                end
+                patient_zero = findall(x->x==1, config[:, 1])
+                inf₀ = !isempty(patient_zero)
+            end
+        end
+    end
+
+    fill!(config, 0)
+
+    !inf₀ && return config
+
+    config[patient_zero, 1] .= 1
+
+    @inbounds @fastmath for t in 1:model.T
+        @inbounds @fastmath for i in 1:model.N
+            h = 0.0
+            @inbounds @fastmath for j in neighbors(model.G, i)
+                h += config[j,t] * model.ν[j,i,t]
+            end
+            config[i, t+1] = sample_single(rng, i, t, config[i,t], h, model)
+        end
+    end
+    return config
+end
+
+
+"""
+    sim_epidemics!(
+        config::Array{Int8,2},
+        model::EpidemicModel{TI,TG};
+        patient_zero::Union{Vector{Int},Nothing}=nothing,
+        γ::Union{Float64,Nothing}=nothing) where {TI<:InfectionModel,TG<:Vector{AbstractGraph}}
+
+Simulates an epidemic outbreak.
+
+# Arguments
+- `config`: A matrix representing the epidemic configuration. Each row corresponds to a node, and each column represents a time step.
+- `model`: The epidemic model, encapsulating information about the infection dynamics, contact graph, and other parameters.
+- `patient_zero`: (Optional) A vector specifying the indices of initial infected individuals. If not provided (default `nothing`), patient zero is selected randomly based on the probability `γ`.
+- `γ`: (Optional) The probability of being a patient zero. If `patient_zero` is not specified and `γ` is provided, patient zero is chosen randomly with probability `γ`. If both `patient_zero` and `γ` are not provided (default `nothing`), patient zero is selected randomly with equal probability for each individual.
+- `rng`: (Optional) A random number generator. Default is `Xoshiro(1234)`.
+
+# Returns
+- A matrix representing the epidemic outbreak configuration over time. Each row corresponds to a node, and each column represents a time step. The values in the matrix indicate the state of each node at each time step.
+"""
+function sim_epidemics!(
+    config::Array{Int8,2},
+    model::EpidemicModel{TI,TG};
+    patient_zero::Union{Vector{Int},Nothing}=nothing,
+    γ::Union{Float64,Nothing}=nothing,
+    reject::Bool=true,
+    rng::AbstractRNG=Xoshiro(1234)) where  {TI<:InfectionModel,TG<:Vector{AbstractGraph}}
+
+    inf₀ = (patient_zero !== nothing)
+    (γ===nothing) && (γ=1/model.N)
+    if !inf₀
+        if !reject
+            @inbounds @fastmath @simd for i in 1:model.N
+                config[i, 1] = Int8(rand(rng) < γ)
+            end
+            patient_zero = findall(x->x==1, config[:, 1])
+            inf₀ = !isempty(patient_zero)
+        else
+            while !inf₀
+                @inbounds @fastmath @simd for i in 1:model.N
+                    config[i, 1] = Int8(rand(rng) < γ)
+                end
+                patient_zero = findall(x->x==1, config[:, 1])
+                inf₀ = !isempty(patient_zero)
+            end
+        end
+    end
+
+    fill!(config, 0)
+
+    !inf₀ && return config
+
+    config[patient_zero, 1] .= 1
+
+    @inbounds @fastmath for t in 1:model.T
+        @inbounds @fastmath for i in 1:model.N
+            h = 0.0
+            @inbounds @fastmath for j in neighbors(model.G[t], i)
+                h += config[j,t] * model.ν[j,i,t]
+            end
+            config[i, t+1] = sample_single(rng, i, t, config[i,t], h, model)
+        end
+    end
+    return config
+end
+
+
+
+"""
     bethe_lattice(z::Int, tmax::Int)
 
 Generate a Bethe lattice (tree) with a specified degree and depth.

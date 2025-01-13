@@ -127,16 +127,7 @@ end
 infectionmodel = SI(0.0, NV, T)
 model = EpidemicModel(infectionmodel, G, T, log.(1 .- λ))
 
-configtest=[1  1  1  1  1  1;
-            0  0  0  1  1  1;
-            0  0  0  0  0  0;
-            0  0  0  0  1  1;
-            0  0  0  0  1  1;
-            0  0  0  0  0  0;
-            0  0  0  0  0  0;
-            0  0  0  0  0  1;
-            0  0  0  0  0  0;
-            0  0  0  0  0  0]
+configtest = load_object("data/configSI.jld2")
 
 # generate observations at the last time
 obsmat = ones(Int8, NV, T+1) * (-1)
@@ -156,8 +147,7 @@ damp = 0.1 # damping factor
 @testset "SimSI" begin
     # epidemic simulation
     Random.seed!(rng, 3)
-    config = sim_epidemics(model, patient_zero=[1], rng=rng)
-
+    config = sim_epidemics(model, patient_zero=[1], reject=true, rng=rng)
     @test config == configtest
 end
 
@@ -170,7 +160,7 @@ end
         marg[i,:,:] = node.marg.m
     end
 
-    margtest = load("data/margSI.jld2", "marg")
+    margtest = load_object("data/margSI.jld2")
     @test marg ≈ margtest
 end
 
