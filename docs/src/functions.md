@@ -2,7 +2,7 @@
 CurrentModule = SmallCouplingDynamicCavity
 ```
 
-# The MyAwesomePackage Module
+# The SmallCouplingDynamicCavity Module
 
 ```@docs
 SmallCouplingDynamicCavity
