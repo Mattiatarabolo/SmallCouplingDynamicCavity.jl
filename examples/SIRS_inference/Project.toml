@@ -1,6 +1,8 @@
 [deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 IndexedGraphs = "8a731c18-cfb7-4915-927e-cc26b56b67cd"
+JLD = "4138dd39-2aa7-5051-a626-17a0bb65d9c8"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
