@@ -257,7 +257,7 @@ struct Node{TI<:InfectionModel,TG<:Union{<:AbstractGraph,Vector{<:AbstractGraph}
 
     function Node(
         i::Int, 
-        ∂::Vector{Int}, 
+        ∂::AbstractVector{Int}, 
         T::Int,
         νs::Vector{Vector{Float64}}, 
         obs::Matrix{Float64},
